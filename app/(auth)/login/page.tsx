@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { signIn, signInWithGoogle } from '@/lib/auth'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -13,9 +14,16 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    // auth logic coming soon
-    setTimeout(() => setLoading(false), 1500)
-  }
+    try {
+        await signIn({ email, password })
+        window.location.href = '/dashboard'
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Invalid email or password'
+        setError(message)
+    } finally {
+        setLoading(false)
+    }
+    }
 
   return (
     <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -149,6 +157,8 @@ export default function LoginPage() {
             {/* GOOGLE */}
             <button
               type="button"
+              onClick={() => signInWithGoogle()}
+
               style={{
                 backgroundColor: '#111', border: '1px solid #333',
                 color: '#f5f0e8', padding: '1rem', borderRadius: '0.75rem',

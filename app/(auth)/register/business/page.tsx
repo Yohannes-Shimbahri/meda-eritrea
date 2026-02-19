@@ -1,6 +1,8 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { signUpBusiness } from '@/lib/auth'
+
 
 const categories = [
   { label: 'Hair Styling', value: 'HAIR_STYLING' },
@@ -70,9 +72,26 @@ export default function BusinessRegisterPage() {
     if (!form.hasBooking) { setError('Please select an option'); return }
     setLoading(true)
     setError('')
-    setTimeout(() => setLoading(false), 1500)
-  }
-
+    try {
+        await signUpBusiness({
+        email: form.email,
+        password: form.password,
+        fullName: form.ownerName,
+        businessName: form.businessName,
+        category: form.category,
+        city: form.city,
+        size: form.size,
+        hasBooking: form.hasBooking === 'yes',
+        acceptsWalkIns: form.acceptsWalkIns === 'yes',
+        })
+        window.location.href = '/business/setup'
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Something went wrong'
+        setError(message)
+    } finally {
+        setLoading(false)
+    }
+    }
   const inputStyle = {
     width: '100%', background: '#111', border: '1px solid #333',
     borderRadius: '0.75rem', padding: '0.875rem 1rem',
