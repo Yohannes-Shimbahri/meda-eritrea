@@ -133,8 +133,8 @@ model Business {
 
 model Employee {
   id          String    @id @default(cuid())
-  userId      String    @unique
-  user        User      @relation(fields: [userId], references: [id])
+  userId      String?   @unique
+  user        User?     @relation(fields: [userId], references: [id])
   businessId  String
   business    Business  @relation(fields: [businessId], references: [id])
   name        String
@@ -146,7 +146,6 @@ model Employee {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  // Relations
   schedules   EmployeeSchedule[]
   bookings    Booking[]
   media       BusinessMedia[]
