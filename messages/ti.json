@@ -1,0 +1,13 @@
+{
+  "nav": {
+    "home": "መእተዊ",
+    "browse": "ድለ",
+    "login": "እቶ",
+    "register": "ተመዝገብ"
+  },
+  "home": {
+    "hero_title": "ኣብ ካናዳ ናይ ሓበሻ ንግዳዊ ትካላት ድለ",
+    "hero_subtitle": "ቆጸራ ሓዝ፣ አገልግሎታት ድለ፣ ምስ ማሕበረሰብካ ተራኸብ",
+    "search_placeholder": "ንግዳዊ ትካላት ድለ..."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "nav": {
+    "home": "Home",
+    "browse": "Browse",
+    "login": "Login",
+    "register": "Register"
+  },
+  "home": {
+    "hero_title": "Find Habesha Businesses in Canada",
+    "hero_subtitle": "Book appointments, browse services, and connect with your community",
+    "search_placeholder": "Search businesses..."
+  }
+}

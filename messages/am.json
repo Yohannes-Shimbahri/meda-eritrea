@@ -1,0 +1,13 @@
+{
+  "nav": {
+    "home": "መነሻ",
+    "browse": "ፈልግ",
+    "login": "ግባ",
+    "register": "ተመዝገብ"
+  },
+  "home": {
+    "hero_title": "በካናዳ የሐበሻ ንግዶችን ያግኙ",
+    "hero_subtitle": "ቀጠሮ ይያዙ፣ አገልግሎቶችን ያስሱ እና ማህበረሰቡን ያገናኙ",
+    "search_placeholder": "ንግዶችን ፈልግ..."
+  }
+}
