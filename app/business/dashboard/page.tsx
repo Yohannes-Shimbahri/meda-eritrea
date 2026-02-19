@@ -21,6 +21,9 @@ export default function BusinessDashboard() {
   const [user, setUser] = useState<{ email?: string; user_metadata?: Record<string, string> } | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [dashServices, setDashServices] = useState<{
+    id: number; name: string; price: string; duration: string; photo: string | null
+  }[]>([])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -420,29 +423,150 @@ export default function BusinessDashboard() {
           {/* ── SERVICES ── */}
           {activeTab === 'services' && (
             <div style={{ animation: 'fadeInUp 0.4s ease both' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <div>
-                  <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.4rem' }}>Services</h1>
-                  <p style={{ color: '#888', fontSize: '0.9rem' }}>Add the services you offer with pricing</p>
+                    <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.4rem' }}>Services</h1>
+                    <p style={{ color: '#888', fontSize: '0.9rem' }}>Add services with photos, pricing and duration</p>
                 </div>
-                <button style={{
-                  backgroundColor: '#c9933a', color: '#0a0a0a', border: 'none',
-                  padding: '0.75rem 1.5rem', borderRadius: '0.75rem',
-                  fontWeight: '700', cursor: 'pointer', fontSize: '0.9rem',
-                }}>+ Add Service</button>
-              </div>
-              <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1rem', padding: '3rem', textAlign: 'center' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💼</div>
-                <h3 style={{ fontWeight: '700', marginBottom: '0.5rem' }}>No services yet</h3>
-                <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Add your services so clients know what you offer and at what price</p>
-                <button style={{
-                  backgroundColor: '#c9933a', color: '#0a0a0a', border: 'none',
-                  padding: '0.75rem 1.5rem', borderRadius: '0.75rem',
-                  fontWeight: '700', cursor: 'pointer',
-                }}>+ Add First Service</button>
-              </div>
+                <button
+                    onClick={() => {
+                    const newService = { id: Date.now(), name: '', price: '', duration: '', photo: null as string | null }
+                    setDashServices(prev => [...prev, newService])
+                    }}
+                    style={{
+                    backgroundColor: '#c9933a', color: '#0a0a0a', border: 'none',
+                    padding: '0.75rem 1.5rem', borderRadius: '0.75rem',
+                    fontWeight: '700', cursor: 'pointer', fontSize: '0.9rem',
+                    }}>+ Add Service</button>
+                </div>
+
+                {dashServices.length === 0 ? (
+                <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1rem', padding: '3rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💼</div>
+                    <h3 style={{ fontWeight: '700', marginBottom: '0.5rem' }}>No services yet</h3>
+                    <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Add your services so clients know what you offer</p>
+                </div>
+                ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {dashServices.map((service, i) => (
+                    <div key={service.id} style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1rem', padding: '1.25rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <span style={{ fontWeight: '600', fontSize: '0.9rem', color: '#c9933a' }}>Service {i + 1}</span>
+                        <button onClick={() => setDashServices(prev => prev.filter(s => s.id !== service.id))}
+                            style={{ background: 'none', border: 'none', color: '#e05c5c', cursor: 'pointer', fontSize: '0.85rem' }}>
+                            Remove
+                        </button>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '1.25rem', alignItems: 'start' }}>
+                        {/* PHOTO UPLOAD */}
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#888', marginBottom: '0.4rem' }}>Service Photo</label>
+                            <div
+                            onClick={() => document.getElementById(`service-photo-${service.id}`)?.click()}
+                            style={{
+                                width: '120px', height: '120px', borderRadius: '0.75rem',
+                                border: '2px dashed #444', cursor: 'pointer',
+                                overflow: 'hidden', position: 'relative',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                backgroundColor: '#0a0a0a', transition: 'border-color 0.2s',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.borderColor = '#c9933a')}
+                            onMouseLeave={e => (e.currentTarget.style.borderColor = '#444')}>
+                            {service.photo ? (
+                                <>
+                                <img src={service.photo} alt="service" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <div style={{
+                                    position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    opacity: 0, transition: 'opacity 0.2s',
+                                }}
+                                    onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                                    onMouseLeave={e => (e.currentTarget.style.opacity = '0')}>
+                                    <span style={{ color: '#fff', fontSize: '0.75rem', fontWeight: '600' }}>Change</span>
+                                </div>
+                                </>
+                            ) : (
+                                <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>📸</div>
+                                <div style={{ fontSize: '0.7rem', color: '#888' }}>Add Photo</div>
+                                </div>
+                            )}
+                            <input
+                                id={`service-photo-${service.id}`}
+                                type="file" accept="image/*" style={{ display: 'none' }}
+                                onChange={e => {
+                                const file = e.target.files?.[0]
+                                if (file) {
+                                    const reader = new FileReader()
+                                    reader.onload = ev => {
+                                    setDashServices(prev => prev.map(s =>
+                                        s.id === service.id ? { ...s, photo: ev.target?.result as string } : s
+                                    ))
+                                    }
+                                    reader.readAsDataURL(file)
+                                }
+                                }}
+                            />
+                            </div>
+                        </div>
+
+                        {/* SERVICE FIELDS */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <div>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#888', marginBottom: '0.4rem' }}>Service Name</label>
+                            <input type="text" value={service.name}
+                                onChange={e => setDashServices(prev => prev.map(s => s.id === service.id ? { ...s, name: e.target.value } : s))}
+                                placeholder="e.g. Hair Braiding" style={{
+                                width: '100%', background: '#0a0a0a', border: '1px solid #333',
+                                borderRadius: '0.75rem', padding: '0.75rem 1rem',
+                                color: '#f5f0e8', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' as const,
+                                }}
+                                onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')}
+                                onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#888', marginBottom: '0.4rem' }}>Price (CAD)</label>
+                                <input type="number" value={service.price}
+                                onChange={e => setDashServices(prev => prev.map(s => s.id === service.id ? { ...s, price: e.target.value } : s))}
+                                placeholder="e.g. 80" style={{
+                                    width: '100%', background: '#0a0a0a', border: '1px solid #333',
+                                    borderRadius: '0.75rem', padding: '0.75rem 1rem',
+                                    color: '#f5f0e8', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' as const,
+                                }}
+                                onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')}
+                                onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#888', marginBottom: '0.4rem' }}>Duration (mins)</label>
+                                <input type="number" value={service.duration}
+                                onChange={e => setDashServices(prev => prev.map(s => s.id === service.id ? { ...s, duration: e.target.value } : s))}
+                                placeholder="e.g. 60" style={{
+                                    width: '100%', background: '#0a0a0a', border: '1px solid #333',
+                                    borderRadius: '0.75rem', padding: '0.75rem 1rem',
+                                    color: '#f5f0e8', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' as const,
+                                }}
+                                onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')}
+                                onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                    ))}
+
+                    {/* SAVE BUTTON */}
+                    <button style={{
+                    backgroundColor: '#c9933a', color: '#0a0a0a', border: 'none',
+                    padding: '1rem', borderRadius: '0.75rem', fontWeight: '700',
+                    fontSize: '1rem', cursor: 'pointer', width: '100%', marginTop: '0.5rem',
+                    }}>
+                    Save Services
+                    </button>
+                </div>
+                )}
             </div>
-          )}
+            )}
 
           {/* ── HOURS ── */}
           {activeTab === 'hours' && (
