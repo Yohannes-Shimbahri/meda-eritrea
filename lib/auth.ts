@@ -38,6 +38,16 @@ export async function signUpBusiness({
     }
   })
   if (error) throw error
+
+  // Save business to database
+  await fetch('/api/business/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email, fullName, businessName, category, city, size, hasBooking, acceptsWalkIns, ownerName: fullName
+    })
+  })
+
   return data
 }
 

@@ -24,6 +24,9 @@ export default function BusinessDashboard() {
   const [dashServices, setDashServices] = useState<{
     id: number; name: string; price: string; duration: string; photo: string | null
   }[]>([])
+  const [dashEmployees, setDashEmployees] = useState<{
+    id: number; name: string; specialty: string; bio: string; photo: string | null
+  }[]>([])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -370,7 +373,10 @@ export default function BusinessDashboard() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <div>
                   <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.4rem' }}>Gallery</h1>
-                  <p style={{ color: '#888', fontSize: '0.9rem' }}>Upload photos and videos of your work</p>
+                  <p style={{ color: '#888', fontSize: '0.9rem' }}>
+                    Upload general photos of your workspace, atmosphere, and work samples.
+                    <span style={{ color: '#c9933a' }}> Service photos are managed in the Services tab. Employee photos are managed in the Employees tab.</span>
+                  </p>  
                 </div>
                 <button style={{
                   backgroundColor: '#c9933a', color: '#0a0a0a', border: 'none',
@@ -396,29 +402,180 @@ export default function BusinessDashboard() {
           {/* ── EMPLOYEES ── */}
           {activeTab === 'employees' && (
             <div style={{ animation: 'fadeInUp 0.4s ease both' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <div>
-                  <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.4rem' }}>Employees</h1>
-                  <p style={{ color: '#888', fontSize: '0.9rem' }}>Manage your team and their schedules</p>
+                    <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.4rem' }}>Employees</h1>
+                    <p style={{ color: '#888', fontSize: '0.9rem' }}>Each employee has their own photo, specialty and schedule</p>
                 </div>
-                <button style={{
-                  backgroundColor: '#c9933a', color: '#0a0a0a', border: 'none',
-                  padding: '0.75rem 1.5rem', borderRadius: '0.75rem',
-                  fontWeight: '700', cursor: 'pointer', fontSize: '0.9rem',
-                }}>+ Add Employee</button>
-              </div>
-              <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1rem', padding: '3rem', textAlign: 'center' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👥</div>
-                <h3 style={{ fontWeight: '700', marginBottom: '0.5rem' }}>No employees yet</h3>
-                <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Add team members so clients can choose their preferred person</p>
-                <button style={{
-                  backgroundColor: '#c9933a', color: '#0a0a0a', border: 'none',
-                  padding: '0.75rem 1.5rem', borderRadius: '0.75rem',
-                  fontWeight: '700', cursor: 'pointer',
-                }}>+ Add First Employee</button>
-              </div>
+                <button
+                    onClick={() => setDashEmployees(prev => [...prev, {
+                    id: Date.now(), name: '', specialty: '', bio: '', photo: null
+                    }])}
+                    style={{
+                    backgroundColor: '#c9933a', color: '#0a0a0a', border: 'none',
+                    padding: '0.75rem 1.5rem', borderRadius: '0.75rem',
+                    fontWeight: '700', cursor: 'pointer', fontSize: '0.9rem',
+                    }}>+ Add Employee</button>
+                </div>
+
+                {dashEmployees.length === 0 ? (
+                <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1rem', padding: '3rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👥</div>
+                    <h3 style={{ fontWeight: '700', marginBottom: '0.5rem' }}>No employees yet</h3>
+                    <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                    Add team members — each gets their own photo, bio and schedule
+                    </p>
+                    <button
+                    onClick={() => setDashEmployees([{ id: Date.now(), name: '', specialty: '', bio: '', photo: null }])}
+                    style={{
+                        backgroundColor: '#c9933a', color: '#0a0a0a', border: 'none',
+                        padding: '0.75rem 1.5rem', borderRadius: '0.75rem',
+                        fontWeight: '700', cursor: 'pointer',
+                    }}>+ Add First Employee</button>
+                </div>
+                ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {dashEmployees.map((emp, i) => (
+                    <div key={emp.id} style={{
+                        backgroundColor: '#111', border: '1px solid #222',
+                        borderRadius: '1rem', padding: '1.25rem',
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <span style={{ fontWeight: '600', fontSize: '0.9rem', color: '#c9933a' }}>
+                            Employee {i + 1}
+                        </span>
+                        <button
+                            onClick={() => setDashEmployees(prev => prev.filter(e => e.id !== emp.id))}
+                            style={{ background: 'none', border: 'none', color: '#e05c5c', cursor: 'pointer', fontSize: '0.85rem' }}>
+                            Remove
+                        </button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '1.25rem', alignItems: 'start' }}>
+                        {/* EMPLOYEE PHOTO */}
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#888', marginBottom: '0.4rem' }}>
+                            Profile Photo
+                            </label>
+                            <div
+                            onClick={() => document.getElementById(`emp-photo-${emp.id}`)?.click()}
+                            style={{
+                                width: '100px', height: '100px', borderRadius: '50%',
+                                border: '2px dashed #444', cursor: 'pointer',
+                                overflow: 'hidden', position: 'relative',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                backgroundColor: '#0a0a0a', transition: 'border-color 0.2s',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.borderColor = '#c9933a')}
+                            onMouseLeave={e => (e.currentTarget.style.borderColor = '#444')}>
+                            {emp.photo ? (
+                                <>
+                                <img src={emp.photo} alt={emp.name}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <div style={{
+                                    position: 'absolute', inset: 0,
+                                    backgroundColor: 'rgba(0,0,0,0.5)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    opacity: 0, transition: 'opacity 0.2s',
+                                }}
+                                    onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                                    onMouseLeave={e => (e.currentTarget.style.opacity = '0')}>
+                                    <span style={{ color: '#fff', fontSize: '0.7rem', fontWeight: '600' }}>Change</span>
+                                </div>
+                                </>
+                            ) : (
+                                <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.75rem' }}>👤</div>
+                                <div style={{ fontSize: '0.65rem', color: '#888', marginTop: '0.25rem' }}>Add Photo</div>
+                                </div>
+                            )}
+                            <input
+                                id={`emp-photo-${emp.id}`}
+                                type="file" accept="image/*" style={{ display: 'none' }}
+                                onChange={e => {
+                                const file = e.target.files?.[0]
+                                if (file) {
+                                    const reader = new FileReader()
+                                    reader.onload = ev => {
+                                    setDashEmployees(prev => prev.map(em =>
+                                        em.id === emp.id ? { ...em, photo: ev.target?.result as string } : em
+                                    ))
+                                    }
+                                    reader.readAsDataURL(file)
+                                }
+                                }}
+                            />
+                            </div>
+                        </div>
+
+                        {/* EMPLOYEE FIELDS */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <div>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#888', marginBottom: '0.4rem' }}>Full Name</label>
+                            <input type="text" value={emp.name}
+                                onChange={e => setDashEmployees(prev => prev.map(em =>
+                                em.id === emp.id ? { ...em, name: e.target.value } : em
+                                ))}
+                                placeholder="e.g. Selam Tesfaye"
+                                style={{
+                                width: '100%', background: '#0a0a0a', border: '1px solid #333',
+                                borderRadius: '0.75rem', padding: '0.75rem 1rem',
+                                color: '#f5f0e8', fontSize: '0.9rem', outline: 'none',
+                                boxSizing: 'border-box' as const,
+                                }}
+                                onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')}
+                                onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
+                            </div>
+                            <div>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#888', marginBottom: '0.4rem' }}>Specialty</label>
+                            <input type="text" value={emp.specialty}
+                                onChange={e => setDashEmployees(prev => prev.map(em =>
+                                em.id === emp.id ? { ...em, specialty: e.target.value } : em
+                                ))}
+                                placeholder="e.g. Braiding & Natural Hair"
+                                style={{
+                                width: '100%', background: '#0a0a0a', border: '1px solid #333',
+                                borderRadius: '0.75rem', padding: '0.75rem 1rem',
+                                color: '#f5f0e8', fontSize: '0.9rem', outline: 'none',
+                                boxSizing: 'border-box' as const,
+                                }}
+                                onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')}
+                                onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
+                            </div>
+                            <div>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#888', marginBottom: '0.4rem' }}>Short Bio</label>
+                            <textarea value={emp.bio}
+                                onChange={e => setDashEmployees(prev => prev.map(em =>
+                                em.id === emp.id ? { ...em, bio: e.target.value } : em
+                                ))}
+                                placeholder="A short description about this team member..."
+                                rows={2}
+                                style={{
+                                width: '100%', background: '#0a0a0a', border: '1px solid #333',
+                                borderRadius: '0.75rem', padding: '0.75rem 1rem',
+                                color: '#f5f0e8', fontSize: '0.9rem', outline: 'none',
+                                boxSizing: 'border-box' as const, resize: 'vertical' as const,
+                                }}
+                                onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')}
+                                onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                    ))}
+
+                    {/* SAVE */}
+                    <button style={{
+                    backgroundColor: '#c9933a', color: '#0a0a0a', border: 'none',
+                    padding: '1rem', borderRadius: '0.75rem', fontWeight: '700',
+                    fontSize: '1rem', cursor: 'pointer', width: '100%', marginTop: '0.5rem',
+                    }}>
+                    Save Employees
+                    </button>
+                </div>
+                )}
             </div>
-          )}
+            )}
 
           {/* ── SERVICES ── */}
           {activeTab === 'services' && (

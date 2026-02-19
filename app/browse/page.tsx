@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -18,19 +18,48 @@ const categories = [
 
 const cities = ['All Cities', 'Toronto', 'Calgary', 'Edmonton', 'Ottawa', 'Vancouver', 'Montreal']
 
+// Sample fallback data shown while DB is empty
 const sampleBusinesses = [
-  { id: 1, name: 'Selam Hair Studio', category: 'Hair Styling', city: 'Toronto', rating: 4.8, reviews: 24, image: '/categories/hair-styling.jpg', slug: 'selam-hair-studio', subscription: 'PRO', verified: true, price: '$$' },
-  { id: 2, name: 'Meron Makeup', category: 'Makeup', city: 'Calgary', rating: 4.9, reviews: 18, image: '/categories/makeup.jpg', slug: 'meron-makeup', subscription: 'STANDARD', verified: true, price: '$$$' },
-  { id: 3, name: 'Habesha Cuts', category: 'Barber', city: 'Edmonton', rating: 4.7, reviews: 41, image: '/categories/barber.jpg', slug: 'habesha-cuts', subscription: 'PRO', verified: true, price: '$' },
-  { id: 4, name: 'Injera Catering Co.', category: 'Catering', city: 'Toronto', rating: 4.6, reviews: 12, image: '/categories/catering.jpg', slug: 'injera-catering', subscription: 'STANDARD', verified: false, price: '$$$' },
-  { id: 5, name: 'Lens by Dawit', category: 'Cameraman', city: 'Ottawa', rating: 5.0, reviews: 8, image: '/categories/cameraman.jpg', slug: 'lens-by-dawit', subscription: 'PRO', verified: true, price: '$$$' },
-  { id: 6, name: 'Habesha Decor', category: 'Event Decoration', city: 'Vancouver', rating: 4.5, reviews: 15, image: '/categories/event-decoration.jpg', slug: 'habesha-decor', subscription: 'FREE', verified: false, price: '$$' },
-  { id: 7, name: 'Ethio Auto Sales', category: 'Car Sales', city: 'Toronto', rating: 4.3, reviews: 9, image: '/categories/car-sales.jpg', slug: 'ethio-auto', subscription: 'STANDARD', verified: false, price: '$$$$' },
-  { id: 8, name: 'Hana Bakery', category: 'Baker', city: 'Calgary', rating: 4.9, reviews: 33, image: '/categories/baker.jpg', slug: 'hana-bakery', subscription: 'PRO', verified: true, price: '$' },
-  { id: 9, name: 'Fix It Fast', category: 'Handy Services', city: 'Edmonton', rating: 4.4, reviews: 7, image: '/categories/handy-services.jpg', slug: 'fix-it-fast', subscription: 'FREE', verified: false, price: '$$' },
+  { id: 1, name: 'Selam Hair Studio', category: 'Hair Styling', city: 'Toronto', rating: 4.8, reviewCount: 24, coverImage: '/categories/hair-styling.jpg', slug: 'selam-hair-studio', subscription: 'PRO', isVerified: true },
+  { id: 2, name: 'Meron Makeup', category: 'Makeup', city: 'Calgary', rating: 4.9, reviewCount: 18, coverImage: '/categories/makeup.jpg', slug: 'meron-makeup', subscription: 'STANDARD', isVerified: true },
+  { id: 3, name: 'Habesha Cuts', category: 'Barber', city: 'Edmonton', rating: 4.7, reviewCount: 41, coverImage: '/categories/barber.jpg', slug: 'habesha-cuts', subscription: 'PRO', isVerified: true },
+  { id: 4, name: 'Injera Catering Co.', category: 'Catering', city: 'Toronto', rating: 4.6, reviewCount: 12, coverImage: '/categories/catering.jpg', slug: 'injera-catering', subscription: 'STANDARD', isVerified: false },
+  { id: 5, name: 'Lens by Dawit', category: 'Cameraman', city: 'Ottawa', rating: 5.0, reviewCount: 8, coverImage: '/categories/cameraman.jpg', slug: 'lens-by-dawit', subscription: 'PRO', isVerified: true },
+  { id: 6, name: 'Habesha Decor', category: 'Event Decoration', city: 'Vancouver', rating: 4.5, reviewCount: 15, coverImage: '/categories/event-decoration.jpg', slug: 'habesha-decor', subscription: 'FREE', isVerified: false },
+  { id: 7, name: 'Ethio Auto Sales', category: 'Car Sales', city: 'Toronto', rating: 4.3, reviewCount: 9, coverImage: '/categories/car-sales.jpg', slug: 'ethio-auto', subscription: 'STANDARD', isVerified: false },
+  { id: 8, name: 'Hana Bakery', category: 'Baker', city: 'Calgary', rating: 4.9, reviewCount: 33, coverImage: '/categories/baker.jpg', slug: 'hana-bakery', subscription: 'PRO', isVerified: true },
+  { id: 9, name: 'Fix It Fast', category: 'Handy Services', city: 'Edmonton', rating: 4.4, reviewCount: 7, coverImage: '/categories/handy-services.jpg', slug: 'fix-it-fast', subscription: 'FREE', isVerified: false },
 ]
 
+type Business = {
+  id: string | number
+  name: string
+  slug: string
+  category: string
+  city: string
+  subscription: string
+  isVerified: boolean
+  coverImage: string | null
+  rating: number | null
+  reviewCount: number
+}
+
 type ViewMode = 'grid' | 'map'
+
+function getCategoryEmoji(category: string) {
+  const map: Record<string, string> = {
+    HAIR_STYLING: '✂️', 'Hair Styling': '✂️',
+    BARBER: '💈', Barber: '💈',
+    MAKEUP: '💄', Makeup: '💄',
+    CATERING: '🍽️', Catering: '🍽️',
+    CAMERAMAN: '📸', Cameraman: '📸',
+    BAKER: '🍞', Baker: '🍞',
+    CAR_SALES: '🚗', 'Car Sales': '🚗',
+    EVENT_DECORATION: '🎊', 'Event Decoration': '🎊',
+    HANDY_SERVICES: '🔧', 'Handy Services': '🔧',
+  }
+  return map[category] || '🏪'
+}
 
 export default function BrowsePage() {
   const [search, setSearch] = useState('')
@@ -38,22 +67,55 @@ export default function BrowsePage() {
   const [city, setCity] = useState('All Cities')
   const [view, setView] = useState<ViewMode>('grid')
   const [sortBy, setSortBy] = useState('featured')
+  const [businesses, setBusinesses] = useState<Business[]>(sampleBusinesses as Business[])
+  const [loadingData, setLoadingData] = useState(false)
+  const [usingRealData, setUsingRealData] = useState(false)
 
-  const filtered = sampleBusinesses
+  // Fetch real data from database
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      setLoadingData(true)
+      try {
+        const params = new URLSearchParams()
+        if (search) params.set('search', search)
+        if (category) params.set('category', category)
+        if (city !== 'All Cities') params.set('city', city)
+        const res = await fetch(`/api/businesses?${params}`)
+        const data = await res.json()
+        if (data.businesses && data.businesses.length > 0) {
+          setBusinesses(data.businesses)
+          setUsingRealData(true)
+        } else if (data.businesses && data.businesses.length === 0 && usingRealData) {
+          // Real data exists but none match filters
+          setBusinesses([])
+        }
+        // If API returns empty and we never had real data, keep sample data
+      } catch {
+        // API failed — keep showing sample data silently
+      } finally {
+        setLoadingData(false)
+      }
+    }
+    const debounce = setTimeout(fetchBusinesses, 300)
+    return () => clearTimeout(debounce)
+  }, [search, category, city, usingRealData])
+
+  const filtered = businesses
     .filter(b => {
+      if (usingRealData) return true // already filtered by API
       const matchSearch = b.name.toLowerCase().includes(search.toLowerCase()) ||
         b.category.toLowerCase().includes(search.toLowerCase())
-      const matchCategory = !category || b.category.toLowerCase().replace(' ', '-') === category
+      const matchCategory = !category || b.category.toLowerCase().replace(/\s+/g, '-') === category
       const matchCity = city === 'All Cities' || b.city === city
       return matchSearch && matchCategory && matchCity
     })
     .sort((a, b) => {
       if (sortBy === 'featured') {
         const order = { PRO: 0, STANDARD: 1, FREE: 2 }
-        return order[a.subscription as keyof typeof order] - order[b.subscription as keyof typeof order]
+        return (order[a.subscription as keyof typeof order] ?? 2) - (order[b.subscription as keyof typeof order] ?? 2)
       }
-      if (sortBy === 'rating') return b.rating - a.rating
-      if (sortBy === 'reviews') return b.reviews - a.reviews
+      if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0)
+      if (sortBy === 'reviews') return b.reviewCount - a.reviewCount
       return 0
     })
 
@@ -84,6 +146,7 @@ export default function BrowsePage() {
           <h1 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1rem' }}>
             Browse Habesha Businesses
           </h1>
+
           {/* FILTERS ROW */}
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
             {/* SEARCH */}
@@ -161,8 +224,15 @@ export default function BrowsePage() {
         {/* RESULTS COUNT */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <p style={{ color: '#888', fontSize: '0.9rem' }}>
-            <span style={{ color: '#f5f0e8', fontWeight: '700' }}>{filtered.length}</span> businesses found
-            {city !== 'All Cities' && <span> in <span style={{ color: '#c9933a' }}>{city}</span></span>}
+            {loadingData ? (
+              <span style={{ color: '#888' }}>Searching...</span>
+            ) : (
+              <>
+                <span style={{ color: '#f5f0e8', fontWeight: '700' }}>{filtered.length}</span> businesses found
+                {city !== 'All Cities' && <span> in <span style={{ color: '#c9933a' }}>{city}</span></span>}
+                {!usingRealData && <span style={{ color: '#555', fontSize: '0.8rem' }}> · showing sample listings</span>}
+              </>
+            )}
           </p>
         </div>
 
@@ -173,7 +243,23 @@ export default function BrowsePage() {
             gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
             gap: '1.25rem',
           }}>
-            {filtered.length === 0 ? (
+            {loadingData ? (
+              // SKELETON LOADERS
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} style={{
+                  backgroundColor: '#111', border: '1px solid #222',
+                  borderRadius: '1.25rem', overflow: 'hidden',
+                  animation: `pulse 1.5s ease ${i * 0.1}s infinite`,
+                }}>
+                  <div style={{ height: '180px', backgroundColor: '#1a1a1a' }} />
+                  <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div style={{ height: '16px', backgroundColor: '#1a1a1a', borderRadius: '0.5rem', width: '70%' }} />
+                    <div style={{ height: '12px', backgroundColor: '#1a1a1a', borderRadius: '0.5rem', width: '50%' }} />
+                    <div style={{ height: '36px', backgroundColor: '#1a1a1a', borderRadius: '0.75rem' }} />
+                  </div>
+                </div>
+              ))
+            ) : filtered.length === 0 ? (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem 0' }}>
                 <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
                 <h3 style={{ fontWeight: '700', marginBottom: '0.5rem' }}>No businesses found</h3>
@@ -187,7 +273,7 @@ export default function BrowsePage() {
                 <div style={{
                   backgroundColor: '#111', border: '1px solid #222',
                   borderRadius: '1.25rem', overflow: 'hidden',
-                  transition: 'all 0.3s', cursor: 'pointer',
+                  transition: 'all 0.3s', cursor: 'pointer', height: '100%',
                 }}
                   onMouseEnter={e => {
                     const el = e.currentTarget
@@ -201,41 +287,55 @@ export default function BrowsePage() {
                     el.style.transform = 'translateY(0)'
                     el.style.boxShadow = 'none'
                   }}>
+
                   {/* IMAGE */}
-                  <div style={{ height: '180px', position: 'relative', overflow: 'hidden' }}>
-                    <Image src={business.image} alt={business.name} fill
-                      style={{ objectFit: 'cover', transition: 'transform 0.4s ease' }}
-                    />
+                  <div style={{ height: '180px', position: 'relative', overflow: 'hidden', backgroundColor: '#222' }}>
+                    {business.coverImage ? (
+                      <Image
+                        src={business.coverImage}
+                        alt={business.name}
+                        fill
+                        style={{ objectFit: 'cover', transition: 'transform 0.4s ease' }}
+                      />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3.5rem' }}>
+                        {getCategoryEmoji(business.category)}
+                      </div>
+                    )}
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)' }} />
+
                     {/* BADGES */}
                     <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', display: 'flex', gap: '0.4rem' }}>
                       {business.subscription === 'PRO' && (
                         <span style={{ backgroundColor: '#c9933a', color: '#0a0a0a', padding: '0.2rem 0.6rem', borderRadius: '1rem', fontSize: '0.7rem', fontWeight: '800' }}>⭐ PRO</span>
                       )}
-                      {business.verified && (
+                      {business.isVerified && (
                         <span style={{ backgroundColor: 'rgba(0,0,0,0.7)', color: '#4ade80', padding: '0.2rem 0.6rem', borderRadius: '1rem', fontSize: '0.7rem', fontWeight: '700' }}>✓ Verified</span>
                       )}
                     </div>
-                    {/* PRICE */}
-                    <div style={{ position: 'absolute', top: '0.75rem', right: '0.75rem' }}>
-                      <span style={{ backgroundColor: 'rgba(0,0,0,0.7)', color: '#f5f0e8', padding: '0.2rem 0.6rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: '700' }}>{business.price}</span>
-                    </div>
                   </div>
+
                   {/* INFO */}
                   <div style={{ padding: '1.25rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                       <h3 style={{ fontWeight: '700', fontSize: '1rem', margin: 0, lineHeight: '1.3' }}>{business.name}</h3>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexShrink: 0, marginLeft: '0.5rem' }}>
-                        <span style={{ color: '#f5c842', fontSize: '0.85rem' }}>★</span>
-                        <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>{business.rating}</span>
-                        <span style={{ color: '#888', fontSize: '0.8rem' }}>({business.reviews})</span>
+                        {business.rating ? (
+                          <>
+                            <span style={{ color: '#f5c842', fontSize: '0.85rem' }}>★</span>
+                            <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>{business.rating}</span>
+                            <span style={{ color: '#888', fontSize: '0.8rem' }}>({business.reviewCount})</span>
+                          </>
+                        ) : (
+                          <span style={{ color: '#555', fontSize: '0.8rem' }}>New</span>
+                        )}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: '#888', fontSize: '0.85rem' }}>✂️ {business.category}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <span style={{ color: '#888', fontSize: '0.85rem' }}>{getCategoryEmoji(business.category)} {business.category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
                       <span style={{ color: '#888', fontSize: '0.85rem' }}>📍 {business.city}</span>
                     </div>
-                    <div style={{ marginTop: '1rem', padding: '0.6rem 1rem', backgroundColor: '#c9933a', borderRadius: '0.75rem', textAlign: 'center', fontWeight: '700', fontSize: '0.85rem', color: '#0a0a0a' }}>
+                    <div style={{ padding: '0.6rem 1rem', backgroundColor: '#c9933a', borderRadius: '0.75rem', textAlign: 'center', fontWeight: '700', fontSize: '0.85rem', color: '#0a0a0a' }}>
                       View Profile
                     </div>
                   </div>
@@ -254,7 +354,6 @@ export default function BrowsePage() {
               height: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center',
               position: 'relative',
             }}>
-              {/* MAP PLACEHOLDER — Google Maps integration coming next */}
               <div style={{
                 position: 'absolute', inset: 0,
                 background: 'repeating-linear-gradient(0deg, #111 0px, #111 39px, #1a1a1a 39px, #1a1a1a 40px), repeating-linear-gradient(90deg, #111 0px, #111 39px, #1a1a1a 39px, #1a1a1a 40px)',
@@ -290,22 +389,38 @@ export default function BrowsePage() {
                   }}
                     onMouseEnter={e => (e.currentTarget.style.borderColor = '#c9933a')}
                     onMouseLeave={e => (e.currentTarget.style.borderColor = '#222')}>
-                    <div style={{ width: '56px', height: '56px', borderRadius: '0.75rem', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
-                      <Image src={business.image} alt={business.name} fill style={{ objectFit: 'cover' }} />
+                    <div style={{ width: '56px', height: '56px', borderRadius: '0.75rem', overflow: 'hidden', flexShrink: 0, position: 'relative', backgroundColor: '#222' }}>
+                      {business.coverImage ? (
+                        <Image src={business.coverImage} alt={business.name} fill style={{ objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+                          {getCategoryEmoji(business.category)}
+                        </div>
+                      )}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
                         <span style={{ fontWeight: '700', fontSize: '0.95rem' }}>{business.name}</span>
-                        {business.subscription === 'PRO' && <span style={{ backgroundColor: '#c9933a', color: '#0a0a0a', padding: '0.1rem 0.4rem', borderRadius: '1rem', fontSize: '0.65rem', fontWeight: '800' }}>PRO</span>}
+                        {business.subscription === 'PRO' && (
+                          <span style={{ backgroundColor: '#c9933a', color: '#0a0a0a', padding: '0.1rem 0.4rem', borderRadius: '1rem', fontSize: '0.65rem', fontWeight: '800' }}>PRO</span>
+                        )}
                       </div>
-                      <div style={{ color: '#888', fontSize: '0.85rem' }}>{business.category} · {business.city}</div>
+                      <div style={{ color: '#888', fontSize: '0.85rem' }}>
+                        {business.category.replace(/_/g, ' ')} · {business.city}
+                      </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <span style={{ color: '#f5c842' }}>★</span>
-                        <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{business.rating}</span>
-                      </div>
-                      <div style={{ color: '#888', fontSize: '0.8rem' }}>({business.reviews})</div>
+                      {business.rating ? (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <span style={{ color: '#f5c842' }}>★</span>
+                            <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{business.rating}</span>
+                          </div>
+                          <div style={{ color: '#888', fontSize: '0.8rem' }}>({business.reviewCount})</div>
+                        </>
+                      ) : (
+                        <span style={{ color: '#555', fontSize: '0.8rem' }}>New</span>
+                      )}
                     </div>
                   </div>
                 </Link>
@@ -317,6 +432,11 @@ export default function BrowsePage() {
 
       <style>{`
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
         @media (max-width: 768px) {
           div[style*="minmax(280px"] { grid-template-columns: repeat(2, 1fr) !important; }
         }
