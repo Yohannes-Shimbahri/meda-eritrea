@@ -1,0 +1,314 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ───────────────────────────────────────────────
+
+enum UserRole {
+  CLIENT
+  BUSINESS_OWNER
+  EMPLOYEE
+  SUPER_ADMIN
+}
+
+enum BusinessCategory {
+  HAIR_STYLING
+  MAKEUP
+  BARBER
+  CATERING
+  CAMERAMAN
+  EVENT_DECORATION
+  CAR_SALES
+  BAKER
+  HANDY_SERVICES
+}
+
+enum SubscriptionTier {
+  FREE
+  STANDARD
+  PRO
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  RESCHEDULED
+}
+
+enum BusinessSize {
+  SOLO
+  TEAM
+}
+
+// ─── USERS ───────────────────────────────────────────────
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String?
+  fullName          String
+  phone             String?
+  avatarUrl         String?
+  role              UserRole  @default(CLIENT)
+  preferredLanguage String    @default("en")
+  googleAccountId   String?
+  googleCalendarToken String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  business          Business?         @relation("BusinessOwner")
+  employeeProfile   Employee?
+  bookings          Booking[]         @relation("ClientBookings")
+  reviews           Review[]
+  savedBusinesses   SavedBusiness[]
+  sentMessages      Message[]         @relation("SentMessages")
+  receivedMessages  Message[]         @relation("ReceivedMessages")
+  notifications     Notification[]
+}
+
+// ─── BUSINESS ────────────────────────────────────────────
+
+model Business {
+  id               String           @id @default(cuid())
+  ownerId          String           @unique
+  owner            User             @relation("BusinessOwner", fields: [ownerId], references: [id])
+  name             String
+  slug             String           @unique
+  category         BusinessCategory
+  description      String?
+  size             BusinessSize     @default(SOLO)
+  hasBooking       Boolean          @default(true)
+  acceptsWalkIns   Boolean          @default(false)
+  isActive         Boolean          @default(true)
+  isVerified       Boolean          @default(false)
+  isApproved       Boolean          @default(false)
+
+  // Location
+  city             String
+  province         String
+  address          String?
+  latitude         Float?
+  longitude        Float?
+
+  // Contact
+  phone            String?
+  email            String?
+  website          String?
+  instagram        String?
+  facebook         String?
+
+  // Subscription
+  subscription     SubscriptionTier @default(FREE)
+  subscriptionStart DateTime?
+  subscriptionEnd   DateTime?
+  billingCycle     String?          // "monthly" or "yearly"
+  autoRenew        Boolean          @default(true)
+  stripeCustomerId String?
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relations
+  employees        Employee[]
+  media            BusinessMedia[]
+  businessHours    BusinessHours[]
+  services         Service[]
+  bookings         Booking[]
+  reviews          Review[]
+  savedBy          SavedBusiness[]
+  messages         Message[]
+  carListings      CarListing[]
+  notifications    Notification[]
+}
+
+// ─── EMPLOYEES ───────────────────────────────────────────
+
+model Employee {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id])
+  businessId  String
+  business    Business  @relation(fields: [businessId], references: [id])
+  name        String
+  bio         String?
+  avatarUrl   String?
+  specialty   String?
+  isActive    Boolean   @default(true)
+  isAdmin     Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  schedules   EmployeeSchedule[]
+  bookings    Booking[]
+  media       BusinessMedia[]
+}
+
+// ─── BUSINESS HOURS ──────────────────────────────────────
+
+model BusinessHours {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+  dayOfWeek  Int      // 0=Sunday, 6=Saturday
+  openTime   String   // "09:00"
+  closeTime  String   // "18:00"
+  isClosed   Boolean  @default(false)
+}
+
+// ─── EMPLOYEE SCHEDULE ───────────────────────────────────
+
+model EmployeeSchedule {
+  id         String   @id @default(cuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  dayOfWeek  Int
+  openTime   String
+  closeTime  String
+  isClosed   Boolean  @default(false)
+}
+
+// ─── SERVICES ────────────────────────────────────────────
+
+model Service {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id])
+  name        String
+  description String?
+  price       Float?
+  priceType   String   @default("fixed") // "fixed", "hourly", "custom"
+  duration    Int?     // in minutes
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  bookings    Booking[]
+}
+
+// ─── MEDIA ───────────────────────────────────────────────
+
+model BusinessMedia {
+  id          String    @id @default(cuid())
+  businessId  String
+  business    Business  @relation(fields: [businessId], references: [id])
+  employeeId  String?
+  employee    Employee? @relation(fields: [employeeId], references: [id])
+  url         String
+  type        String    // "image" or "video"
+  caption     String?
+  isPublished Boolean   @default(false)
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+}
+
+// ─── BOOKINGS ────────────────────────────────────────────
+
+model Booking {
+  id                  String        @id @default(cuid())
+  businessId          String
+  business            Business      @relation(fields: [businessId], references: [id])
+  clientId            String
+  client              User          @relation("ClientBookings", fields: [clientId], references: [id])
+  employeeId          String?
+  employee            Employee?     @relation(fields: [employeeId], references: [id])
+  serviceId           String?
+  service             Service?      @relation(fields: [serviceId], references: [id])
+  status              BookingStatus @default(PENDING)
+  date                DateTime
+  startTime           String
+  endTime             String?
+  notes               String?
+  isWalkIn            Boolean       @default(false)
+  googleCalendarEventId String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+}
+
+// ─── REVIEWS ─────────────────────────────────────────────
+
+model Review {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+  clientId   String
+  client     User     @relation(fields: [clientId], references: [id])
+  rating     Int      // 1-5
+  comment    String?
+  response   String?  // business owner response
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ─── SAVED BUSINESSES ────────────────────────────────────
+
+model SavedBusiness {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, businessId])
+}
+
+// ─── MESSAGES ────────────────────────────────────────────
+
+model Message {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+// ─── NOTIFICATIONS ───────────────────────────────────────
+
+model Notification {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  businessId String?
+  business   Business? @relation(fields: [businessId], references: [id])
+  type       String   // "booking", "message", "review", "system"
+  title      String
+  body       String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+// ─── CAR LISTINGS ────────────────────────────────────────
+
+model CarListing {
+  id           String   @id @default(cuid())
+  businessId   String
+  business     Business @relation(fields: [businessId], references: [id])
+  make         String
+  model        String
+  year         Int
+  mileage      Int
+  price        Float
+  condition    String   // "new", "used", "certified"
+  color        String?
+  transmission String?  // "automatic", "manual"
+  fuelType     String?  // "gasoline", "diesel", "electric", "hybrid"
+  numberOfOwners Int?
+  description  String?
+  images       String[] // array of cloudinary URLs
+  isAvailable  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
