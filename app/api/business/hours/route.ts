@@ -1,13 +1,12 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@/lib/supabase'
 
 export async function POST(request: Request) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
+    const token = request.headers.get('Authorization')?.replace('Bearer ', '')
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const supabase = createServerClient(token)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -18,15 +17,14 @@ export async function POST(request: Request) {
     })
     if (!business) return NextResponse.json({ error: 'Business not found' }, { status: 404 })
 
-    // Delete and recreate hours
     await prisma.businessHours.deleteMany({ where: { businessId: business.id } })
 
     await prisma.businessHours.createMany({
       data: hours.map((h: { day: string; open: string; close: string; closed: boolean }, i: number) => ({
         businessId: business.id,
         dayOfWeek: i,
-        openTime: h.closed ? null : h.open,
-        closeTime: h.closed ? null : h.close,
+        openTime: h.closed ? '00:00' : h.open,
+        closeTime: h.closed ? '00:00' : h.close,
         isClosed: h.closed,
       }))
     })
@@ -40,10 +38,9 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
+    const token = request.headers.get('Authorization')?.replace('Bearer ', '')
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const supabase = createServerClient(token)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

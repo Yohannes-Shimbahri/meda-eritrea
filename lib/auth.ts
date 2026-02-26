@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { createClient } from '@supabase/supabase-js'
 
 export async function signUpClient({
   email, password, fullName
@@ -11,14 +12,19 @@ export async function signUpClient({
     }
   })
   if (error) throw error
+  await fetch('/api/client/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, fullName })
+  })
   return data
 }
 
 export async function signUpBusiness({
-  email, password, fullName, businessName, category, city, size, hasBooking, acceptsWalkIns
+  email, password, fullName, businessName, categoryId, city, size, hasBooking, acceptsWalkIns
 }: {
   email: string; password: string; fullName: string
-  businessName: string; category: string; city: string
+  businessName: string; categoryId: string; city: string
   size: string; hasBooking: boolean; acceptsWalkIns: boolean
 }) {
   const { data, error } = await supabase.auth.signUp({
@@ -29,7 +35,7 @@ export async function signUpBusiness({
         full_name: fullName,
         role: 'BUSINESS_OWNER',
         business_name: businessName,
-        category,
+        category_id: categoryId,
         city,
         size,
         has_booking: hasBooking,
@@ -38,16 +44,20 @@ export async function signUpBusiness({
     }
   })
   if (error) throw error
-
-  // Save business to database
   await fetch('/api/business/create', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      email, fullName, businessName, category, city, size, hasBooking, acceptsWalkIns, ownerName: fullName
+      email,
+      ownerName: fullName,
+      businessName,
+      categoryId,   // ← categoryId instead of category enum
+      city,
+      size,
+      hasBooking,
+      acceptsWalkIns,
     })
   })
-
   return data
 }
 
@@ -79,4 +89,15 @@ export async function getSession() {
 export async function getUser() {
   const { data: { user } } = await supabase.auth.getUser()
   return user
+}
+
+export async function getAdminUser(token: string) {
+  const supabaseServer = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  const { data, error } = await supabaseServer.auth.getUser(token)
+  if (error || !data?.user) return null
+  if (data.user.user_metadata?.role !== 'ADMIN') return null
+  return data.user
 }

@@ -1,20 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { signUpBusiness } from '@/lib/auth'
 
-
-const categories = [
-  { label: 'Hair Styling', value: 'HAIR_STYLING' },
-  { label: 'Makeup', value: 'MAKEUP' },
-  { label: 'Barber', value: 'BARBER' },
-  { label: 'Catering', value: 'CATERING' },
-  { label: 'Cameraman', value: 'CAMERAMAN' },
-  { label: 'Event Decoration', value: 'EVENT_DECORATION' },
-  { label: 'Car Sales', value: 'CAR_SALES' },
-  { label: 'Baker', value: 'BAKER' },
-  { label: 'Handy Services', value: 'HANDY_SERVICES' },
-]
+type Category = { id: string; name: string; icon: string; slug: string }
 
 const TOTAL_STEPS = 4
 
@@ -23,22 +12,28 @@ export default function BusinessRegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
+
+  // Fetch categories dynamically on mount
+  useEffect(() => {
+    fetch('/api/admin/categories')
+      .then(r => r.json())
+      .then(d => { if (d.categories) setCategories(d.categories) })
+      .catch(() => {})
+  }, [])
 
   const [form, setForm] = useState({
-    // Step 1
     ownerName: '',
     email: '',
     password: '',
     confirmPassword: '',
-    // Step 2
     businessName: '',
-    category: '',
+    categoryId: '',   // ← stores Category.id (cuid)
     city: '',
-    // Step 3
-    size: '', // 'SOLO' | 'TEAM'
-    // Step 4
-    hasBooking: '', // 'yes' | 'no'
-    acceptsWalkIns: '', // 'yes' | 'no'
+    size: '',
+    hasBooking: '',
+    acceptsWalkIns: '',
+    agreedToTerms: false,
   })
 
   const update = (field: string, value: string) =>
@@ -58,7 +53,7 @@ export default function BusinessRegisterPage() {
       }
     }
     if (step === 2) {
-      if (!form.businessName || !form.category || !form.city) {
+      if (!form.businessName || !form.categoryId || !form.city) {
         setError('Please fill in all fields'); return
       }
     }
@@ -70,28 +65,30 @@ export default function BusinessRegisterPage() {
 
   const handleSubmit = async () => {
     if (!form.hasBooking) { setError('Please select an option'); return }
+    if (!form.agreedToTerms) { setError('You must agree to the Terms & Conditions and Privacy Policy'); return }
     setLoading(true)
     setError('')
     try {
-        await signUpBusiness({
+      await signUpBusiness({
         email: form.email,
         password: form.password,
         fullName: form.ownerName,
         businessName: form.businessName,
-        category: form.category,
+        categoryId: form.categoryId,  // ← pass categoryId instead of category enum
         city: form.city,
         size: form.size,
         hasBooking: form.hasBooking === 'yes',
         acceptsWalkIns: form.acceptsWalkIns === 'yes',
-        })
-        window.location.href = '/business/setup'
+      })
+      window.location.href = '/business/setup'
     } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Something went wrong'
-        setError(message)
+      const message = err instanceof Error ? err.message : 'Something went wrong'
+      setError(message)
     } finally {
-        setLoading(false)
+      setLoading(false)
     }
-    }
+  }
+
   const inputStyle = {
     width: '100%', background: '#111', border: '1px solid #333',
     borderRadius: '0.75rem', padding: '0.875rem 1rem',
@@ -136,22 +133,15 @@ export default function BusinessRegisterPage() {
               </span>
             </div>
             <div style={{ height: '4px', backgroundColor: '#222', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{
-                height: '100%', backgroundColor: '#c9933a',
-                borderRadius: '2px',
-                width: `${(step / TOTAL_STEPS) * 100}%`,
-                transition: 'width 0.4s ease',
-              }} />
+              <div style={{ height: '100%', backgroundColor: '#c9933a', borderRadius: '2px', width: `${(step / TOTAL_STEPS) * 100}%`, transition: 'width 0.4s ease' }} />
             </div>
           </div>
 
           {/* ERROR */}
           {error && (
-            <div style={{
-              background: '#1a0a0a', border: '1px solid #e05c5c',
-              borderRadius: '0.75rem', padding: '0.875rem 1rem',
-              color: '#e05c5c', fontSize: '0.9rem', marginBottom: '1.5rem',
-            }}>{error}</div>
+            <div style={{ background: '#1a0a0a', border: '1px solid #e05c5c', borderRadius: '0.75rem', padding: '0.875rem 1rem', color: '#e05c5c', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+              {error}
+            </div>
           )}
 
           {/* ── STEP 1: Account Info ── */}
@@ -219,11 +209,11 @@ export default function BusinessRegisterPage() {
                 </div>
                 <div>
                   <label style={labelStyle}>Business Category</label>
-                  <select value={form.category} onChange={e => update('category', e.target.value)}
-                    style={{ ...inputStyle, color: form.category ? '#f5f0e8' : '#888' }}>
+                  <select value={form.categoryId} onChange={e => update('categoryId', e.target.value)}
+                    style={{ ...inputStyle, color: form.categoryId ? '#f5f0e8' : '#888' }}>
                     <option value="">Select your category</option>
                     {categories.map(c => (
-                      <option key={c.value} value={c.value}>{c.label}</option>
+                      <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
                     ))}
                   </select>
                 </div>
@@ -293,16 +283,10 @@ export default function BusinessRegisterPage() {
                   <div style={{ marginTop: '0.5rem' }}>
                     <p style={{ color: '#ccc', fontSize: '0.9rem', fontWeight: '600', marginBottom: '0.75rem' }}>Do you also accept walk-ins?</p>
                     <div style={{ display: 'flex', gap: '1rem' }}>
-                      <div onClick={() => update('acceptsWalkIns', 'yes')} style={{
-                        ...optionCardStyle(form.acceptsWalkIns === 'yes'),
-                        flex: 1, justifyContent: 'center', padding: '1rem',
-                      }}>
+                      <div onClick={() => update('acceptsWalkIns', 'yes')} style={{ ...optionCardStyle(form.acceptsWalkIns === 'yes'), flex: 1, justifyContent: 'center', padding: '1rem' }}>
                         <span style={{ fontWeight: '700' }}>Yes</span>
                       </div>
-                      <div onClick={() => update('acceptsWalkIns', 'no')} style={{
-                        ...optionCardStyle(form.acceptsWalkIns === 'no'),
-                        flex: 1, justifyContent: 'center', padding: '1rem',
-                      }}>
+                      <div onClick={() => update('acceptsWalkIns', 'no')} style={{ ...optionCardStyle(form.acceptsWalkIns === 'no'), flex: 1, justifyContent: 'center', padding: '1rem' }}>
                         <span style={{ fontWeight: '700' }}>No</span>
                       </div>
                     </div>
@@ -315,34 +299,20 @@ export default function BusinessRegisterPage() {
           {/* NAVIGATION BUTTONS */}
           <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
             {step > 1 && (
-              <button onClick={() => setStep(s => s - 1)} style={{
-                flex: 1, backgroundColor: '#111', border: '1px solid #333',
-                color: '#f5f0e8', padding: '1rem', borderRadius: '0.75rem',
-                fontWeight: '600', fontSize: '1rem', cursor: 'pointer', transition: 'all 0.2s',
-              }}
+              <button onClick={() => setStep(s => s - 1)} style={{ flex: 1, backgroundColor: '#111', border: '1px solid #333', color: '#f5f0e8', padding: '1rem', borderRadius: '0.75rem', fontWeight: '600', fontSize: '1rem', cursor: 'pointer', transition: 'all 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = '#c9933a')}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = '#333')}>
                 ← Back
               </button>
             )}
             {step < TOTAL_STEPS ? (
-              <button onClick={nextStep} style={{
-                flex: 2, backgroundColor: '#c9933a', color: '#0a0a0a',
-                padding: '1rem', borderRadius: '0.75rem', fontWeight: '700',
-                fontSize: '1rem', border: 'none', cursor: 'pointer', transition: 'all 0.2s',
-              }}
+              <button onClick={nextStep} style={{ flex: 2, backgroundColor: '#c9933a', color: '#0a0a0a', padding: '1rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '1rem', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#b07d2a')}
                 onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#c9933a')}>
                 Continue →
               </button>
             ) : (
-              <button onClick={handleSubmit} disabled={loading} style={{
-                flex: 2, backgroundColor: loading ? '#7a5820' : '#c9933a',
-                color: '#0a0a0a', padding: '1rem', borderRadius: '0.75rem',
-                fontWeight: '700', fontSize: '1rem', border: 'none',
-                cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              }}>
+              <button onClick={handleSubmit} disabled={loading} style={{ flex: 2, backgroundColor: loading ? '#7a5820' : '#c9933a', color: '#0a0a0a', padding: '1rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '1rem', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                 {loading ? (
                   <><span style={{ width: '16px', height: '16px', border: '2px solid #0a0a0a', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />Creating your business...</>
                 ) : '🎉 Create My Business'}
@@ -350,12 +320,17 @@ export default function BusinessRegisterPage() {
             )}
           </div>
 
-          <p style={{ textAlign: 'center', color: '#555', fontSize: '0.8rem', marginTop: '1.5rem' }}>
-            By registering you agree to our{' '}
-            <Link href="/terms" style={{ color: '#666', textDecoration: 'underline' }}>Terms</Link>
-            {' '}and{' '}
-            <Link href="/privacy" style={{ color: '#666', textDecoration: 'underline' }}>Privacy Policy</Link>
-          </p>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer', marginTop: '1.5rem' }}>
+            <input type="checkbox" checked={form.agreedToTerms}
+              onChange={e => setForm(prev => ({ ...prev, agreedToTerms: e.target.checked }))}
+              style={{ marginTop: '2px', accentColor: '#c9933a', width: '16px', height: '16px', flexShrink: 0, cursor: 'pointer' }} />
+            <span style={{ color: '#888', fontSize: '0.85rem', lineHeight: 1.5 }}>
+              I agree to Meda&apos;s{' '}
+              <Link href="/terms" target="_blank" style={{ color: '#c9933a', textDecoration: 'underline' }}>Terms & Conditions</Link>
+              {' '}and{' '}
+              <Link href="/privacy" target="_blank" style={{ color: '#c9933a', textDecoration: 'underline' }}>Privacy Policy</Link>
+            </span>
+          </label>
         </div>
       </div>
 

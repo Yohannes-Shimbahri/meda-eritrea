@@ -5,7 +5,7 @@ import { signUpClient, signInWithGoogle } from '@/lib/auth'
 
 
 export default function ClientRegisterPage() {
-  const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '' })
+  const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '', agreedToTerms: false })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -21,11 +21,14 @@ export default function ClientRegisterPage() {
     if (form.password.length < 8) {
         setError('Password must be at least 8 characters'); return
     }
+    if (!form.agreedToTerms) {
+      setError('You must agree to the Terms & Conditions and Privacy Policy'); return
+    }
     setLoading(true)
     setError('')
     try {
         await signUpClient({ email: form.email, password: form.password, fullName: form.fullName })
-        setRegistered(true)
+        window.location.href = '/dashboard'
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Something went wrong'
         setError(message)
@@ -46,27 +49,6 @@ export default function ClientRegisterPage() {
     fontWeight: '600' as const, color: '#ccc', marginBottom: '0.5rem',
   }
 
-  if (registered) {
-    return (
-        <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f5f0e8' }}>
-        <div style={{ textAlign: 'center', maxWidth: '400px', padding: '2rem', animation: 'fadeInUp 0.5s ease both' }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📧</div>
-            <h2 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.75rem' }}>Check your email</h2>
-            <p style={{ color: '#888', lineHeight: '1.6', marginBottom: '2rem' }}>
-            We sent a confirmation link to <span style={{ color: '#c9933a', fontWeight: '600' }}>{form.email}</span>. Click the link to activate your account then come back to log in.
-            </p>
-            <a href="/login" style={{
-            backgroundColor: '#c9933a', color: '#0a0a0a',
-            padding: '0.875rem 2rem', borderRadius: '0.75rem',
-            fontWeight: '700', textDecoration: 'none', fontSize: '0.95rem',
-            }}>
-            Go to Login
-            </a>
-            <style>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }`}</style>
-        </div>
-        </main>
-    )
-    }
 
   return (
     <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -184,12 +166,20 @@ export default function ClientRegisterPage() {
             </Link>
           </p>
 
-          <p style={{ textAlign: 'center', color: '#444', fontSize: '0.8rem', marginTop: '1rem' }}>
-            By creating an account you agree to our{' '}
-            <Link href="/terms" style={{ color: '#666', textDecoration: 'underline' }}>Terms</Link>
-            {' '}and{' '}
-            <Link href="/privacy" style={{ color: '#666', textDecoration: 'underline' }}>Privacy Policy</Link>
-          </p>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer', marginTop: '1rem' }}>
+            <input
+              type="checkbox"
+              checked={form.agreedToTerms}
+              onChange={e => setForm(prev => ({ ...prev, agreedToTerms: e.target.checked }))}
+              style={{ marginTop: '2px', accentColor: '#c9933a', width: '16px', height: '16px', flexShrink: 0, cursor: 'pointer' }}
+            />
+            <span style={{ color: '#888', fontSize: '0.85rem', lineHeight: 1.5 }}>
+              I agree to Meda&apos;s{' '}
+              <Link href="/terms" target="_blank" style={{ color: '#c9933a', textDecoration: 'underline' }}>Terms & Conditions</Link>
+              {' '}and{' '}
+              <Link href="/privacy" target="_blank" style={{ color: '#c9933a', textDecoration: 'underline' }}>Privacy Policy</Link>
+            </span>
+          </label>
         </div>
       </div>
 

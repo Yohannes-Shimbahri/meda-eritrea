@@ -15,16 +15,29 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
     try {
-        await signIn({ email, password })
+      const data = await signIn({ email, password })
+      const role = data.user?.user_metadata?.role
+      
+      // Check if user was trying to book something
+      const bookingReturn = localStorage.getItem('bookingReturn')
+      if (bookingReturn) {
+        localStorage.removeItem('bookingReturn')
+        window.location.href = bookingReturn
+        return
+      }
+      
+      if (role === 'BUSINESS_OWNER') {
+        window.location.href = '/business/dashboard'
+      } else {
         window.location.href = '/dashboard'
+      }
     } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Invalid email or password'
-        setError(message)
+      const message = err instanceof Error ? err.message : 'Invalid email or password'
+      setError(message)
     } finally {
-        setLoading(false)
+      setLoading(false)
     }
-    }
-
+  }
   return (
     <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 

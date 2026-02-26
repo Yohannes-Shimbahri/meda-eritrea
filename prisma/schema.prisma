@@ -109,7 +109,7 @@ model Business {
   subscription     SubscriptionTier @default(FREE)
   subscriptionStart DateTime?
   subscriptionEnd   DateTime?
-  billingCycle     String?          // "monthly" or "yearly"
+  billingCycle     String?
   autoRenew        Boolean          @default(true)
   stripeCustomerId String?
 
@@ -127,6 +127,7 @@ model Business {
   messages         Message[]
   carListings      CarListing[]
   notifications    Notification[]
+  profileViews     ProfileView[]   // ← added
 }
 
 // ─── EMPLOYEES ───────────────────────────────────────────
@@ -157,9 +158,9 @@ model BusinessHours {
   id         String   @id @default(cuid())
   businessId String
   business   Business @relation(fields: [businessId], references: [id])
-  dayOfWeek  Int      // 0=Sunday, 6=Saturday
-  openTime   String   // "09:00"
-  closeTime  String   // "18:00"
+  dayOfWeek  Int
+  openTime   String
+  closeTime  String
   isClosed   Boolean  @default(false)
 }
 
@@ -184,12 +185,13 @@ model Service {
   name        String
   description String?
   price       Float?
-  priceType   String   @default("fixed") // "fixed", "hourly", "custom"
-  duration    Int?     // in minutes
+  priceType   String   @default("fixed")
+  duration    Int?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
 
   bookings    Booking[]
+  media       BusinessMedia[]
 }
 
 // ─── MEDIA ───────────────────────────────────────────────
@@ -200,8 +202,11 @@ model BusinessMedia {
   business    Business  @relation(fields: [businessId], references: [id])
   employeeId  String?
   employee    Employee? @relation(fields: [employeeId], references: [id])
+  serviceId   String?
+  service     Service?  @relation(fields: [serviceId], references: [id])
   url         String
-  type        String    // "image" or "video"
+  publicId    String?
+  type        String
   caption     String?
   isPublished Boolean   @default(false)
   order       Int       @default(0)
@@ -211,24 +216,24 @@ model BusinessMedia {
 // ─── BOOKINGS ────────────────────────────────────────────
 
 model Booking {
-  id                  String        @id @default(cuid())
-  businessId          String
-  business            Business      @relation(fields: [businessId], references: [id])
-  clientId            String
-  client              User          @relation("ClientBookings", fields: [clientId], references: [id])
-  employeeId          String?
-  employee            Employee?     @relation(fields: [employeeId], references: [id])
-  serviceId           String?
-  service             Service?      @relation(fields: [serviceId], references: [id])
-  status              BookingStatus @default(PENDING)
-  date                DateTime
-  startTime           String
-  endTime             String?
-  notes               String?
-  isWalkIn            Boolean       @default(false)
+  id                    String        @id @default(cuid())
+  businessId            String
+  business              Business      @relation(fields: [businessId], references: [id])
+  clientId              String
+  client                User          @relation("ClientBookings", fields: [clientId], references: [id])
+  employeeId            String?
+  employee              Employee?     @relation(fields: [employeeId], references: [id])
+  serviceId             String?
+  service               Service?      @relation(fields: [serviceId], references: [id])
+  status                BookingStatus @default(PENDING)
+  date                  DateTime
+  startTime             String
+  endTime               String?
+  notes                 String?
+  isWalkIn              Boolean       @default(false)
   googleCalendarEventId String?
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 }
 
 // ─── REVIEWS ─────────────────────────────────────────────
@@ -239,9 +244,9 @@ model Review {
   business   Business @relation(fields: [businessId], references: [id])
   clientId   String
   client     User     @relation(fields: [clientId], references: [id])
-  rating     Int      // 1-5
+  rating     Int
   comment    String?
-  response   String?  // business owner response
+  response   String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
@@ -277,37 +282,51 @@ model Message {
 // ─── NOTIFICATIONS ───────────────────────────────────────
 
 model Notification {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   userId     String?
-  user       User?    @relation(fields: [userId], references: [id])
+  user       User?     @relation(fields: [userId], references: [id])
   businessId String?
   business   Business? @relation(fields: [businessId], references: [id])
-  type       String   // "booking", "message", "review", "system"
+  type       String
   title      String
   body       String
-  isRead     Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  isRead     Boolean   @default(false)
+  createdAt  DateTime  @default(now())
 }
 
 // ─── CAR LISTINGS ────────────────────────────────────────
 
 model CarListing {
-  id           String   @id @default(cuid())
-  businessId   String
-  business     Business @relation(fields: [businessId], references: [id])
-  make         String
-  model        String
-  year         Int
-  mileage      Int
-  price        Float
-  condition    String   // "new", "used", "certified"
-  color        String?
-  transmission String?  // "automatic", "manual"
-  fuelType     String?  // "gasoline", "diesel", "electric", "hybrid"
+  id             String   @id @default(cuid())
+  businessId     String
+  business       Business @relation(fields: [businessId], references: [id])
+  make           String
+  model          String
+  year           Int
+  mileage        Int
+  price          Float
+  condition      String
+  color          String?
+  transmission   String?
+  fuelType       String?
   numberOfOwners Int?
-  description  String?
-  images       String[] // array of cloudinary URLs
-  isAvailable  Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  description    String?
+  images         String[]
+  isAvailable    Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ─── PROFILE VIEWS ───────────────────────────────────────
+
+model ProfileView {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  viewerId   String?
+  viewerIp   String?
+  viewedAt   DateTime @default(now())
+
+  @@index([businessId])
+  @@index([viewedAt])
 }

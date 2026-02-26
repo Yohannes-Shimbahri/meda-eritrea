@@ -1,41 +1,47 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+
+function getEmailFromToken(request: Request): string | null {
+  try {
+    const token = request.headers.get('Authorization')?.replace('Bearer ', '')
+    if (!token) return null
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString())
+    return payload.email || null
+  } catch { return null }
+}
 
 export async function POST(request: Request) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const body = await request.json()
     const { businessName, category, city, size, hasBooking, acceptsWalkIns, ownerName, email } = body
 
     // Create slug from business name
-    const slug = businessName
+    const baseSlug = businessName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
 
-    // Make slug unique if needed
-    const existing = await prisma.business.findUnique({ where: { slug } })
-    const finalSlug = existing ? `${slug}-${Date.now()}` : slug
+    const existing = await prisma.business.findUnique({ where: { slug: baseSlug } })
+    const finalSlug = existing ? `${baseSlug}-${Date.now()}` : baseSlug
 
-    // Create or find user in our DB
+    // Find or create user in our DB
     let dbUser = await prisma.user.findUnique({ where: { email } })
     if (!dbUser) {
       dbUser = await prisma.user.create({
         data: {
-          id: user.id,
           email,
           fullName: ownerName,
           role: 'BUSINESS_OWNER',
         }
       })
+    }
+
+    // Check if business already exists for this user
+    const existingBusiness = await prisma.business.findFirst({
+      where: { ownerId: dbUser.id }
+    })
+    if (existingBusiness) {
+      return NextResponse.json({ business: existingBusiness, slug: existingBusiness.slug })
     }
 
     // Create the business
@@ -46,11 +52,11 @@ export async function POST(request: Request) {
         slug: finalSlug,
         category: category.toUpperCase().replace(/-/g, '_') as never,
         city,
-        province: 'ON', // default, can be updated later
+        province: 'ON',
         size: size as never,
         hasBooking,
         acceptsWalkIns,
-        isApproved: true, // auto-approve for now
+        isApproved: true,
         isActive: true,
       }
     })

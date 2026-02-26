@@ -268,11 +268,12 @@ export default function HomePage() {
           flexWrap: 'wrap', gap: '2rem', textAlign: 'center',
         }}>
           {[
-            { number: '200+', label: 'Businesses Listed' },
-            { number: '9', label: 'Categories' },
-            { number: '6', label: 'Cities in Canada' },
-            { number: '1000+', label: 'Happy Clients' },
-          ].map(stat => (
+            { number: 'Verified', label: 'Business Listings' },
+            { number: '9', label: 'Business Categories' },
+            { number: '6', label: 'Cities Expanding Soon' },
+            { number: 'Join Us', label: 'Be Among the First Businesses' },
+          ]
+          .map(stat => (
             <div key={stat.label}>
               <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#c9933a' }}>{stat.number}</div>
               <div style={{ fontSize: '0.9rem', color: '#888', marginTop: '0.25rem' }}>{stat.label}</div>
