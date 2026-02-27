@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { v2 as cloudinary } from 'cloudinary'
 
 export const dynamic = 'force-dynamic'
 
 const prisma = new PrismaClient()
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
 
 function getEmailFromToken(req: Request): string | null {
   try {
@@ -18,7 +25,17 @@ function slugify(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 }
 
-// GET — public, returns all active categories
+async function uploadImage(base64: string, slug: string): Promise<string> {
+  const result = await cloudinary.uploader.upload(base64, {
+    folder: `meda/categories`,
+    public_id: slug,
+    overwrite: true,
+    transformation: [{ width: 400, height: 400, crop: 'fill', quality: 'auto', format: 'webp' }],
+  })
+  return result.secure_url
+}
+
+// GET — public
 export async function GET() {
   try {
     const categories = await (prisma as any).category.findMany({
@@ -33,22 +50,26 @@ export async function GET() {
   }
 }
 
-// POST — admin only, create category
+// POST — admin only, create
 export async function POST(req: NextRequest) {
   try {
     const email = getEmailFromToken(req)
     if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const admin = await (prisma as any).user.findUnique({ where: { email } })
     if (admin?.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const { name, icon, description, order } = await req.json()
+    const { name, icon, description, order, imageBase64 } = await req.json()
     if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
 
     const slug = slugify(name)
+    let imageUrl: string | undefined
+
+    if (imageBase64?.startsWith('data:')) {
+      imageUrl = await uploadImage(imageBase64, slug)
+    }
 
     const category = await (prisma as any).category.create({
-      data: { name, slug, icon: icon || '🏢', description: description || null, order: order ?? 0 },
+      data: { name, slug, icon: icon || '🏢', description: description || null, order: order ?? 0, imageUrl: imageUrl ?? null },
     })
     return NextResponse.json({ success: true, category })
   } catch (err: any) {
@@ -58,16 +79,15 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PATCH — admin only, update category
+// PATCH — admin only, update
 export async function PATCH(req: NextRequest) {
   try {
     const email = getEmailFromToken(req)
     if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const admin = await (prisma as any).user.findUnique({ where: { email } })
     if (admin?.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const { id, name, icon, description, order, isActive } = await req.json()
+    const { id, name, icon, description, order, isActive, imageBase64 } = await req.json()
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
     const data: any = {}
@@ -76,6 +96,11 @@ export async function PATCH(req: NextRequest) {
     if (description !== undefined) data.description = description
     if (order !== undefined) data.order = order
     if (isActive !== undefined) data.isActive = isActive
+
+    if (imageBase64?.startsWith('data:')) {
+      const slug = data.slug || (await (prisma as any).category.findUnique({ where: { id } }))?.slug || id
+      data.imageUrl = await uploadImage(imageBase64, slug)
+    }
 
     const category = await (prisma as any).category.update({ where: { id }, data })
     return NextResponse.json({ success: true, category })
@@ -90,14 +115,12 @@ export async function DELETE(req: NextRequest) {
   try {
     const email = getEmailFromToken(req)
     if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const admin = await (prisma as any).user.findUnique({ where: { email } })
     if (admin?.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { id } = await req.json()
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
-    // Check if any businesses use this category
     const count = await (prisma as any).business.count({ where: { categoryId: id } })
     if (count > 0) return NextResponse.json({ error: `Cannot delete — ${count} business(es) use this category` }, { status: 400 })
 

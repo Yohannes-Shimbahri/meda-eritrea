@@ -3,7 +3,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { signUpClient, signInWithGoogle } from '@/lib/auth'
 
-
 export default function ClientRegisterPage() {
   const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '', agreedToTerms: false })
   const [loading, setLoading] = useState(false)
@@ -15,27 +14,21 @@ export default function ClientRegisterPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (form.password !== form.confirmPassword) {
-        setError('Passwords do not match'); return
-    }
-    if (form.password.length < 8) {
-        setError('Password must be at least 8 characters'); return
-    }
-    if (!form.agreedToTerms) {
-      setError('You must agree to the Terms & Conditions and Privacy Policy'); return
-    }
+    if (form.password !== form.confirmPassword) { setError('Passwords do not match'); return }
+    if (form.password.length < 8) { setError('Password must be at least 8 characters'); return }
+    if (!form.agreedToTerms) { setError('You must agree to the Terms & Conditions and Privacy Policy'); return }
     setLoading(true)
     setError('')
     try {
-        await signUpClient({ email: form.email, password: form.password, fullName: form.fullName })
-        window.location.href = '/dashboard'
+      await signUpClient({ email: form.email, password: form.password, fullName: form.fullName })
+      window.location.href = '/dashboard'
     } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Something went wrong'
-        setError(message)
+      const message = err instanceof Error ? err.message : 'Something went wrong'
+      setError(message)
     } finally {
-        setLoading(false)
+      setLoading(false)
     }
-    }
+  }
 
   const inputStyle = {
     width: '100%', background: '#111', border: '1px solid #333',
@@ -43,12 +36,7 @@ export default function ClientRegisterPage() {
     color: '#f5f0e8', fontSize: '0.95rem', outline: 'none',
     boxSizing: 'border-box' as const, transition: 'border-color 0.2s',
   }
-
-  const labelStyle = {
-    display: 'block', fontSize: '0.85rem',
-    fontWeight: '600' as const, color: '#ccc', marginBottom: '0.5rem',
-  }
-
+  const labelStyle = { display: 'block', fontSize: '0.85rem', fontWeight: '600' as const, color: '#ccc', marginBottom: '0.5rem' }
 
   return (
     <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -56,25 +44,19 @@ export default function ClientRegisterPage() {
       <nav style={{ borderBottom: '1px solid #222', padding: '1rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href="/" style={{ fontSize: '1.5rem', fontWeight: '800', color: '#c9933a', textDecoration: 'none' }}>Meda</Link>
         <span style={{ color: '#888', fontSize: '0.9rem' }}>
-          Already have an account?{' '}
+          <span className="hide-mobile">Already have an account?{' '}</span>
           <Link href="/login" style={{ color: '#c9933a', textDecoration: 'none', fontWeight: '600' }}>Sign in</Link>
         </span>
       </nav>
 
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
         <div style={{ width: '100%', maxWidth: '440px', animation: 'fadeInUp 0.5s ease both' }}>
 
           <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '0.5rem' }}>Create your account</h1>
-          <p style={{ color: '#888', marginBottom: '2rem', fontSize: '0.95rem' }}>
-            Join the Habesha community in Canada
-          </p>
+          <p style={{ color: '#888', marginBottom: '2rem', fontSize: '0.95rem' }}>Join the Habesha community in Canada</p>
 
           {error && (
-            <div style={{
-              background: '#1a0a0a', border: '1px solid #e05c5c',
-              borderRadius: '0.75rem', padding: '0.875rem 1rem',
-              color: '#e05c5c', fontSize: '0.9rem', marginBottom: '1.5rem',
-            }}>{error}</div>
+            <div style={{ background: '#1a0a0a', border: '1px solid #e05c5c', borderRadius: '0.75rem', padding: '0.875rem 1rem', color: '#e05c5c', fontSize: '0.9rem', marginBottom: '1.5rem' }}>{error}</div>
           )}
 
           <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -119,13 +101,7 @@ export default function ClientRegisterPage() {
                 onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
             </div>
 
-            <button type="submit" disabled={loading} style={{
-              backgroundColor: loading ? '#7a5820' : '#c9933a',
-              color: '#0a0a0a', padding: '1rem', borderRadius: '0.75rem',
-              fontWeight: '700', fontSize: '1rem', border: 'none',
-              cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', marginTop: '0.5rem',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-            }}>
+            <button type="submit" disabled={loading} style={{ backgroundColor: loading ? '#7a5820' : '#c9933a', color: '#0a0a0a', padding: '1rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '1rem', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
               {loading ? (
                 <><span style={{ width: '16px', height: '16px', border: '2px solid #0a0a0a', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />Creating account...</>
               ) : 'Create Account'}
@@ -137,15 +113,8 @@ export default function ClientRegisterPage() {
               <div style={{ flex: 1, height: '1px', backgroundColor: '#222' }} />
             </div>
 
-            <button 
-              type="button"
-              onClick={() => signInWithGoogle()}
-              style={{
-              backgroundColor: '#111', border: '1px solid #333', color: '#f5f0e8',
-              padding: '1rem', borderRadius: '0.75rem', fontWeight: '600', fontSize: '0.95rem',
-              cursor: 'pointer', transition: 'all 0.2s',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
-            }}
+            <button type="button" onClick={() => signInWithGoogle()}
+              style={{ backgroundColor: '#111', border: '1px solid #333', color: '#f5f0e8', padding: '1rem', borderRadius: '0.75rem', fontWeight: '600', fontSize: '0.95rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = '#c9933a')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = '#333')}>
               <svg width="18" height="18" viewBox="0 0 24 24">
@@ -161,18 +130,13 @@ export default function ClientRegisterPage() {
 
           <p style={{ textAlign: 'center', color: '#555', fontSize: '0.85rem', marginTop: '2rem' }}>
             Are you a business owner?{' '}
-            <Link href="/register/business" style={{ color: '#c9933a', textDecoration: 'none', fontWeight: '600' }}>
-              Register your business
-            </Link>
+            <Link href="/register/business" style={{ color: '#c9933a', textDecoration: 'none', fontWeight: '600' }}>Register your business</Link>
           </p>
 
           <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer', marginTop: '1rem' }}>
-            <input
-              type="checkbox"
-              checked={form.agreedToTerms}
+            <input type="checkbox" checked={form.agreedToTerms}
               onChange={e => setForm(prev => ({ ...prev, agreedToTerms: e.target.checked }))}
-              style={{ marginTop: '2px', accentColor: '#c9933a', width: '16px', height: '16px', flexShrink: 0, cursor: 'pointer' }}
-            />
+              style={{ marginTop: '2px', accentColor: '#c9933a', width: '16px', height: '16px', flexShrink: 0, cursor: 'pointer' }} />
             <span style={{ color: '#888', fontSize: '0.85rem', lineHeight: 1.5 }}>
               I agree to Meda&apos;s{' '}
               <Link href="/terms" target="_blank" style={{ color: '#c9933a', textDecoration: 'underline' }}>Terms & Conditions</Link>
@@ -186,6 +150,9 @@ export default function ClientRegisterPage() {
       <style>{`
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 480px) {
+          .hide-mobile { display: none; }
+        }
       `}</style>
     </main>
   )

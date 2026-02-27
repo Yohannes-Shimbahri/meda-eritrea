@@ -7,25 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── ENUMS ───────────────────────────────────────────────
-
 enum UserRole {
   CLIENT
   BUSINESS_OWNER
   EMPLOYEE
   SUPER_ADMIN
-}
-
-enum BusinessCategory {
-  HAIR_STYLING
-  MAKEUP
-  BARBER
-  CATERING
-  CAMERAMAN
-  EVENT_DECORATION
-  CAR_SALES
-  BAKER
-  HANDY_SERVICES
 }
 
 enum SubscriptionTier {
@@ -47,31 +33,47 @@ enum BusinessSize {
   TEAM
 }
 
+// ─── CATEGORIES ──────────────────────────────────────────
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  slug        String     @unique
+  icon        String     @default("✂️")
+  imageUrl    String?
+  description String?
+  isActive    Boolean    @default(true)
+  order       Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  businesses  Business[]
+}
+
 // ─── USERS ───────────────────────────────────────────────
 
 model User {
-  id                String    @id @default(cuid())
-  email             String    @unique
-  passwordHash      String?
-  fullName          String
-  phone             String?
-  avatarUrl         String?
-  role              UserRole  @default(CLIENT)
-  preferredLanguage String    @default("en")
-  googleAccountId   String?
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  passwordHash        String?
+  fullName            String
+  phone               String?
+  avatarUrl           String?
+  role                UserRole  @default(CLIENT)
+  preferredLanguage   String    @default("en")
+  googleAccountId     String?
   googleCalendarToken String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  // Relations
-  business          Business?         @relation("BusinessOwner")
-  employeeProfile   Employee?
-  bookings          Booking[]         @relation("ClientBookings")
-  reviews           Review[]
-  savedBusinesses   SavedBusiness[]
-  sentMessages      Message[]         @relation("SentMessages")
-  receivedMessages  Message[]         @relation("ReceivedMessages")
-  notifications     Notification[]
+  business         Business?       @relation("BusinessOwner")
+  employeeProfile  Employee?
+  bookings         Booking[]       @relation("ClientBookings")
+  reviews          Review[]
+  savedBusinesses  SavedBusiness[]
+  sentMessages     Message[]       @relation("SentMessages")
+  receivedMessages Message[]       @relation("ReceivedMessages")
+  notifications    Notification[]
 }
 
 // ─── BUSINESS ────────────────────────────────────────────
@@ -82,7 +84,9 @@ model Business {
   owner            User             @relation("BusinessOwner", fields: [ownerId], references: [id])
   name             String
   slug             String           @unique
-  category         BusinessCategory
+  categoryId       String?
+  category         Category?        @relation(fields: [categoryId], references: [id])
+  categoryLegacy   String?
   description      String?
   size             BusinessSize     @default(SOLO)
   hasBooking       Boolean          @default(true)
@@ -90,69 +94,57 @@ model Business {
   isActive         Boolean          @default(true)
   isVerified       Boolean          @default(false)
   isApproved       Boolean          @default(false)
-
-  // Location
   city             String
   province         String
   address          String?
   latitude         Float?
   longitude        Float?
-
-  // Contact
   phone            String?
   email            String?
   website          String?
   instagram        String?
   facebook         String?
-
-  // Subscription
   subscription     SubscriptionTier @default(FREE)
   subscriptionStart DateTime?
   subscriptionEnd   DateTime?
   billingCycle     String?
   autoRenew        Boolean          @default(true)
   stripeCustomerId String?
-
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
-  // Relations
-  employees        Employee[]
-  media            BusinessMedia[]
-  businessHours    BusinessHours[]
-  services         Service[]
-  bookings         Booking[]
-  reviews          Review[]
-  savedBy          SavedBusiness[]
-  messages         Message[]
-  carListings      CarListing[]
-  notifications    Notification[]
-  profileViews     ProfileView[]   // ← added
+  employees     Employee[]
+  media         BusinessMedia[]
+  businessHours BusinessHours[]
+  services      Service[]
+  bookings      Booking[]
+  reviews       Review[]
+  savedBy       SavedBusiness[]
+  messages      Message[]
+  carListings   CarListing[]
+  notifications Notification[]
+  profileViews  ProfileView[]
 }
-
-// ─── EMPLOYEES ───────────────────────────────────────────
 
 model Employee {
-  id          String    @id @default(cuid())
-  userId      String?   @unique
-  user        User?     @relation(fields: [userId], references: [id])
-  businessId  String
-  business    Business  @relation(fields: [businessId], references: [id])
-  name        String
-  bio         String?
-  avatarUrl   String?
-  specialty   String?
-  isActive    Boolean   @default(true)
-  isAdmin     Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  userId     String?   @unique
+  user       User?     @relation(fields: [userId], references: [id])
+  businessId String
+  business   Business  @relation(fields: [businessId], references: [id])
+  name       String
+  bio        String?
+  avatarUrl  String?
+  specialty  String?
+  isActive   Boolean   @default(true)
+  isAdmin    Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
-  schedules   EmployeeSchedule[]
-  bookings    Booking[]
-  media       BusinessMedia[]
+  schedules EmployeeSchedule[]
+  bookings  Booking[]
+  media     BusinessMedia[]
 }
-
-// ─── BUSINESS HOURS ──────────────────────────────────────
 
 model BusinessHours {
   id         String   @id @default(cuid())
@@ -164,8 +156,6 @@ model BusinessHours {
   isClosed   Boolean  @default(false)
 }
 
-// ─── EMPLOYEE SCHEDULE ───────────────────────────────────
-
 model EmployeeSchedule {
   id         String   @id @default(cuid())
   employeeId String
@@ -175,8 +165,6 @@ model EmployeeSchedule {
   closeTime  String
   isClosed   Boolean  @default(false)
 }
-
-// ─── SERVICES ────────────────────────────────────────────
 
 model Service {
   id          String   @id @default(cuid())
@@ -190,11 +178,9 @@ model Service {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
 
-  bookings    Booking[]
-  media       BusinessMedia[]
+  bookings Booking[]
+  media    BusinessMedia[]
 }
-
-// ─── MEDIA ───────────────────────────────────────────────
 
 model BusinessMedia {
   id          String    @id @default(cuid())
@@ -212,8 +198,6 @@ model BusinessMedia {
   order       Int       @default(0)
   createdAt   DateTime  @default(now())
 }
-
-// ─── BOOKINGS ────────────────────────────────────────────
 
 model Booking {
   id                    String        @id @default(cuid())
@@ -236,8 +220,6 @@ model Booking {
   updatedAt             DateTime      @updatedAt
 }
 
-// ─── REVIEWS ─────────────────────────────────────────────
-
 model Review {
   id         String   @id @default(cuid())
   businessId String
@@ -251,8 +233,6 @@ model Review {
   updatedAt  DateTime @updatedAt
 }
 
-// ─── SAVED BUSINESSES ────────────────────────────────────
-
 model SavedBusiness {
   id         String   @id @default(cuid())
   userId     String
@@ -263,8 +243,6 @@ model SavedBusiness {
 
   @@unique([userId, businessId])
 }
-
-// ─── MESSAGES ────────────────────────────────────────────
 
 model Message {
   id         String   @id @default(cuid())
@@ -279,8 +257,6 @@ model Message {
   createdAt  DateTime @default(now())
 }
 
-// ─── NOTIFICATIONS ───────────────────────────────────────
-
 model Notification {
   id         String    @id @default(cuid())
   userId     String?
@@ -293,8 +269,6 @@ model Notification {
   isRead     Boolean   @default(false)
   createdAt  DateTime  @default(now())
 }
-
-// ─── CAR LISTINGS ────────────────────────────────────────
 
 model CarListing {
   id             String   @id @default(cuid())
@@ -316,8 +290,6 @@ model CarListing {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
-
-// ─── PROFILE VIEWS ───────────────────────────────────────
 
 model ProfileView {
   id         String   @id @default(cuid())

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 
 type Category = {
@@ -7,6 +7,7 @@ type Category = {
   name: string
   slug: string
   icon: string
+  imageUrl: string | null
   description: string | null
   isActive: boolean
   order: number
@@ -22,6 +23,9 @@ export default function AdminCategoriesPage() {
   const [msg, setMsg] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [imageBase64, setImageBase64] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState({ name: '', icon: '🏢', description: '', order: '0' })
 
@@ -43,11 +47,32 @@ export default function AdminCategoriesPage() {
 
   useEffect(() => { load() }, [])
 
-  const resetForm = () => { setForm({ name: '', icon: '🏢', description: '', order: '0' }); setEditingId(null); setShowForm(false) }
+  const resetForm = () => {
+    setForm({ name: '', icon: '🏢', description: '', order: '0' })
+    setEditingId(null)
+    setShowForm(false)
+    setImagePreview(null)
+    setImageBase64(null)
+  }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) { showMsg('Image must be under 5MB'); return }
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string
+      setImagePreview(result)
+      setImageBase64(result)
+    }
+    reader.readAsDataURL(file)
+  }
 
   const handleEdit = (cat: Category) => {
     setForm({ name: cat.name, icon: cat.icon, description: cat.description || '', order: String(cat.order) })
     setEditingId(cat.id)
+    setImagePreview(cat.imageUrl || null)
+    setImageBase64(null)
     setShowForm(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -57,7 +82,12 @@ export default function AdminCategoriesPage() {
     setSaving(true)
     try {
       const headers = await getHeaders()
-      const body = { ...form, order: Number(form.order), ...(editingId ? { id: editingId } : {}) }
+      const body = {
+        ...form,
+        order: Number(form.order),
+        ...(editingId ? { id: editingId } : {}),
+        ...(imageBase64 ? { imageBase64 } : {}),
+      }
       const res = await fetch('/api/admin/categories', {
         method: editingId ? 'PATCH' : 'POST',
         headers,
@@ -132,21 +162,67 @@ export default function AdminCategoriesPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
               <div>
                 <label style={s.label}>Category Name *</label>
-                <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Nail Salon" style={s.input} onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')} onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
+                <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Nail Salon" style={s.input}
+                  onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')}
+                  onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
               </div>
               <div>
                 <label style={s.label}>Sort Order</label>
-                <input type="number" value={form.order} onChange={e => setForm(p => ({ ...p, order: e.target.value }))} style={s.input} onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')} onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
+                <input type="number" value={form.order} onChange={e => setForm(p => ({ ...p, order: e.target.value }))} style={s.input}
+                  onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')}
+                  onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
               </div>
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
               <label style={s.label}>Description (optional)</label>
-              <input value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Short description shown to users" style={s.input} onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')} onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
+              <input value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Short description shown to users" style={s.input}
+                onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')}
+                onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
             </div>
 
+            {/* Image Upload */}
             <div style={{ marginBottom: '1.25rem' }}>
-              <label style={s.label}>Icon — selected: <span style={{ fontSize: '1.2rem' }}>{form.icon}</span></label>
+              <label style={s.label}>Category Image (optional — shown on browse page)</label>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                {/* Preview */}
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{ width: '100px', height: '100px', borderRadius: '0.875rem', border: `2px dashed ${imagePreview ? '#c9933a' : '#333'}`, overflow: 'hidden', cursor: 'pointer', flexShrink: 0, backgroundColor: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
+                >
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ textAlign: 'center', color: '#555', fontSize: '0.75rem' }}>
+                      <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>📷</div>
+                      <div>Click to upload</div>
+                    </div>
+                  )}
+                  {imagePreview && (
+                    <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', opacity: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: '#fff', fontWeight: '600' }}
+                      onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                      onMouseLeave={e => (e.currentTarget.style.opacity = '0')}>
+                      Change
+                    </div>
+                  )}
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
+                <div style={{ flex: 1 }}>
+                  <p style={{ color: '#666', fontSize: '0.8rem', lineHeight: 1.5, margin: 0 }}>
+                    Upload a photo representing this category. It will be displayed on the browse page alongside the icon. Square images work best. Max 5MB.
+                  </p>
+                  {imagePreview && (
+                    <button onClick={() => { setImagePreview(null); setImageBase64(null) }} style={{ marginTop: '0.5rem', background: 'none', border: '1px solid #333', color: '#e05c5c', padding: '0.3rem 0.7rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.78rem' }}>
+                      Remove image
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Emoji Icon (fallback) */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={s.label}>Emoji Icon (fallback if no image) — selected: <span style={{ fontSize: '1.2rem' }}>{form.icon}</span></label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
                 {POPULAR_ICONS.map(icon => (
                   <button key={icon} onClick={() => setForm(p => ({ ...p, icon }))} style={{ fontSize: '1.4rem', background: form.icon === icon ? '#1a1200' : 'transparent', border: `2px solid ${form.icon === icon ? '#c9933a' : '#333'}`, borderRadius: '0.5rem', width: '42px', height: '42px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -158,7 +234,9 @@ export default function AdminCategoriesPage() {
             </div>
 
             <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button onClick={handleSave} disabled={saving} style={s.btn()}>{saving ? 'Saving...' : editingId ? 'Update Category' : 'Create Category'}</button>
+              <button onClick={handleSave} disabled={saving} style={s.btn()}>
+                {saving ? 'Saving...' : editingId ? 'Update Category' : 'Create Category'}
+              </button>
               <button onClick={resetForm} style={s.btn('#333')}>Cancel</button>
             </div>
           </div>
@@ -174,25 +252,39 @@ export default function AdminCategoriesPage() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {categories.sort((a, b) => a.order - b.order).map(cat => (
+            {[...categories].sort((a, b) => a.order - b.order).map(cat => (
               <div key={cat.id} style={{ backgroundColor: '#111', border: `1px solid ${cat.isActive ? '#222' : '#1a1200'}`, borderRadius: '1rem', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', opacity: cat.isActive ? 1 : 0.6 }}>
-                <div style={{ fontSize: '2rem', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a0a0a', borderRadius: '0.75rem', flexShrink: 0 }}>{cat.icon}</div>
+
+                {/* Image or icon */}
+                <div style={{ width: '56px', height: '56px', borderRadius: '0.75rem', overflow: 'hidden', backgroundColor: '#0a0a0a', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {cat.imageUrl ? (
+                    <img src={cat.imageUrl} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: '1.75rem' }}>{cat.icon}</span>
+                  )}
+                </div>
+
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
                     <span style={{ fontWeight: '700', fontSize: '1rem' }}>{cat.name}</span>
                     {!cat.isActive && <span style={{ fontSize: '0.7rem', backgroundColor: '#333', color: '#888', padding: '0.1rem 0.5rem', borderRadius: '1rem', fontWeight: '700' }}>HIDDEN</span>}
+                    {cat.imageUrl && <span style={{ fontSize: '0.7rem', backgroundColor: '#0a1f0a', color: '#4ade80', padding: '0.1rem 0.5rem', borderRadius: '1rem', fontWeight: '700' }}>📷 Photo</span>}
                   </div>
                   <div style={{ fontSize: '0.8rem', color: '#555' }}>
                     /{cat.slug} · {cat._count?.businesses ?? 0} businesses · order {cat.order}
                   </div>
                   {cat.description && <div style={{ fontSize: '0.8rem', color: '#888', marginTop: '0.25rem' }}>{cat.description}</div>}
                 </div>
+
                 <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
                   <button onClick={() => handleEdit(cat)} style={{ background: 'none', border: '1px solid #333', color: '#888', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.8rem' }}>Edit</button>
                   <button onClick={() => handleToggle(cat)} style={{ background: 'none', border: `1px solid ${cat.isActive ? '#333' : '#c9933a44'}`, color: cat.isActive ? '#888' : '#c9933a', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.8rem' }}>
                     {cat.isActive ? 'Hide' : 'Show'}
                   </button>
-                  <button onClick={() => handleDelete(cat)} style={{ background: 'none', border: '1px solid #e05c5c33', color: '#e05c5c', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.8rem' }} disabled={(cat._count?.businesses ?? 0) > 0} title={(cat._count?.businesses ?? 0) > 0 ? 'Cannot delete — businesses use this category' : 'Delete'}>
+                  <button onClick={() => handleDelete(cat)}
+                    style={{ background: 'none', border: '1px solid #e05c5c33', color: '#e05c5c', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.8rem' }}
+                    disabled={(cat._count?.businesses ?? 0) > 0}
+                    title={(cat._count?.businesses ?? 0) > 0 ? 'Cannot delete — businesses use this category' : 'Delete'}>
                     Delete
                   </button>
                 </div>
