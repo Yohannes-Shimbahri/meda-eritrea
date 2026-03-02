@@ -151,8 +151,7 @@ export default function BusinessProfile() {
   )
 
   const avgRating = reviews.length > 0 ? (reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length).toFixed(1) : null
-  const categoryLabel = business.category?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
-
+  const categoryLabel = (typeof business.category === 'object' ? business.category?.name : business.category)?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
   // Booking panel content (shared between desktop sidebar and mobile drawer)
   const BookingPanel = () => (
     <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '1.25rem', padding: '1.25rem' }}>
