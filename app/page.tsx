@@ -1,19 +1,24 @@
 'use client'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
-const categories = [
-  { name: 'Hair Styling', slug: 'hair-styling', image: '/categories/hair-styling.jpg' },
-  { name: 'Makeup', slug: 'makeup', image: '/categories/makeup.jpg' },
-  { name: 'Barber', slug: 'barber', image: '/categories/barber.jpg' },
-  { name: 'Catering', slug: 'catering', image: '/categories/catering.jpg' },
-  { name: 'Cameraman', slug: 'cameraman', image: '/categories/cameraman.jpg' },
-  { name: 'Event Decoration', slug: 'event-decoration', image: '/categories/event-decoration.jpg' },
-  { name: 'Car Sales', slug: 'car-sales', image: '/categories/car-sales.jpg' },
-  { name: 'Baker', slug: 'baker', image: '/categories/baker.jpg' },
-  { name: 'Handy Services', slug: 'handy-services', image: '/categories/handy-services.jpg' },
-]
+const [categories, setCategories] = useState<{ name: string; slug: string; image: string }[]>([])
+
+useEffect(() => {
+  fetch('/api/admin/categories')
+    .then(r => r.json())
+    .then(data => {
+      if (data.categories) {
+        setCategories(data.categories.map((c: any) => ({
+          name: c.name,
+          slug: c.slug,
+          image: c.imageUrl || `/categories/${c.slug}.jpg`,
+        })))
+      }
+    })
+    .catch(() => {})
+}, [])
 
 const cities = ['All Cities', 'Toronto', 'Calgary', 'Edmonton', 'Ottawa', 'Vancouver', 'Montreal']
 
