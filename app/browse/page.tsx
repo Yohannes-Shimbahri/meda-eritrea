@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
@@ -189,7 +189,7 @@ function GoogleMap({ businesses, selectedId, onSelect, city }: { businesses: Bus
   )
 }
 
-export default function BrowsePage() {
+function BrowseContent() {
   const searchParams = useSearchParams()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
@@ -465,5 +465,12 @@ export default function BrowsePage() {
         }
       `}</style>
     </main>
+  )
+}
+export default function BrowsePage() {
+  return (
+    <Suspense fallback={null}>
+      <BrowseContent />
+    </Suspense>
   )
 }
