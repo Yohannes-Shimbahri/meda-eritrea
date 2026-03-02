@@ -9,7 +9,6 @@ async function getUserFromToken(token: string) {
   return prisma.user.findUnique({ where: { email: user.email! } })
 }
 
-// GET — check if saved, or fetch all saved businesses
 export async function GET(req: NextRequest) {
   try {
     const token = req.headers.get('authorization')?.replace('Bearer ', '')
@@ -21,19 +20,18 @@ export async function GET(req: NextRequest) {
     const businessSlug = searchParams.get('businessSlug')
 
     if (businessSlug) {
-      // Check single business
       const business = await prisma.business.findUnique({ where: { slug: businessSlug }, select: { id: true } })
       if (!business) return NextResponse.json({ saved: false })
       const saved = await prisma.savedBusiness.findFirst({ where: { userId: dbUser.id, businessId: business.id } })
       return NextResponse.json({ saved: !!saved })
     }
 
-    // Fetch all saved businesses
-    const saved = await prisma.savedBusiness.findMany({
+    const saved = await (prisma as any).savedBusiness.findMany({
       where: { userId: dbUser.id },
       include: {
         business: {
           include: {
+            category: true,
             media: { where: { caption: 'cover' }, take: 1 }
           }
         }
@@ -42,11 +40,13 @@ export async function GET(req: NextRequest) {
     })
 
     return NextResponse.json({
-      businesses: saved.map(s => ({
+      businesses: saved.map((s: any) => ({
         id: s.business.id,
         name: s.business.name,
         slug: s.business.slug,
-        category: s.business.category,
+        category: s.business.category
+          ? { id: s.business.category.id, name: s.business.category.name, slug: s.business.category.slug }
+          : null,
         city: s.business.city,
         subscription: s.business.subscription,
         coverImage: s.business.media?.[0]?.url || null,
@@ -59,14 +59,12 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST — save a business
 export async function POST(req: NextRequest) {
   try {
     const token = req.headers.get('authorization')?.replace('Bearer ', '')
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const dbUser = await getUserFromToken(token)
     if (!dbUser) return NextResponse.json({ error: 'User not found' }, { status: 404 })
-
     const { businessId } = await req.json()
     await prisma.savedBusiness.upsert({
       where: { userId_businessId: { userId: dbUser.id, businessId } },
@@ -80,14 +78,12 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// DELETE — unsave a business
 export async function DELETE(req: NextRequest) {
   try {
     const token = req.headers.get('authorization')?.replace('Bearer ', '')
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const dbUser = await getUserFromToken(token)
     if (!dbUser) return NextResponse.json({ error: 'User not found' }, { status: 404 })
-
     const { businessId } = await req.json()
     await prisma.savedBusiness.deleteMany({ where: { userId: dbUser.id, businessId } })
     return NextResponse.json({ success: true })
