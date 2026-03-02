@@ -2,12 +2,13 @@ import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 
 type Props = {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params
   const business = await (prisma as any).business.findUnique({
-    where: { slug: params.slug },
+    where: { slug },
     select: {
       name: true,
       description: true,
@@ -47,7 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: 'website',
       title,
       description,
-      url: `${siteUrl}/business/${params.slug}`,
+      url: `${siteUrl}/business/${slug}`,
       siteName: 'Meda',
       images: coverImage
         ? [{ url: coverImage, width: 1200, height: 630, alt: business.name }]
@@ -60,7 +61,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: coverImage ? [coverImage] : [`${siteUrl}/og-default.png`],
     },
     alternates: {
-      canonical: `${siteUrl}/business/${params.slug}`,
+      canonical: `${siteUrl}/business/${slug}`,
     },
   }
 }
