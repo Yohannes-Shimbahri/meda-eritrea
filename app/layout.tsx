@@ -4,6 +4,11 @@ import './globals.css'
 
 const geist = Geist({ subsets: ['latin'] })
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+}
+
 export const metadata: Metadata = {
   title: {
     default: 'Meda — Habesha Businesses in Canada',
