@@ -3,22 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 
-const [categories, setCategories] = useState<{ name: string; slug: string; image: string }[]>([])
 
-useEffect(() => {
-  fetch('/api/admin/categories')
-    .then(r => r.json())
-    .then(data => {
-      if (data.categories) {
-        setCategories(data.categories.map((c: any) => ({
-          name: c.name,
-          slug: c.slug,
-          image: c.imageUrl || `/categories/${c.slug}.jpg`,
-        })))
-      }
-    })
-    .catch(() => {})
-}, [])
 
 const cities = ['All Cities', 'Toronto', 'Calgary', 'Edmonton', 'Ottawa', 'Vancouver', 'Montreal']
 
@@ -58,6 +43,23 @@ export default function HomePage() {
   const [city, setCity] = useState('All Cities')
   const [hoveredCat, setHoveredCat] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+
+  const [categories, setCategories] = useState<{ name: string; slug: string; image: string }[]>([])
+
+  useEffect(() => {
+    fetch('/api/admin/categories')
+      .then(r => r.json())
+      .then(data => {
+        if (data.categories) {
+          setCategories(data.categories.map((c: any) => ({
+            name: c.name,
+            slug: c.slug,
+            image: c.imageUrl || `/categories/${c.slug}.jpg`,
+          })))
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   return (
     <main style={{ backgroundColor: '#0a0a0a', color: '#f5f0e8', minHeight: '100vh', overflowX: 'hidden' }}>
