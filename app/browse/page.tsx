@@ -5,18 +5,7 @@ import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-const categories = [
-  { label: 'All', value: '' },
-  { label: 'Hair Styling', value: 'hair-styling' },
-  { label: 'Makeup', value: 'makeup' },
-  { label: 'Barber', value: 'barber' },
-  { label: 'Catering', value: 'catering' },
-  { label: 'Cameraman', value: 'cameraman' },
-  { label: 'Event Decoration', value: 'event-decoration' },
-  { label: 'Car Sales', value: 'car-sales' },
-  { label: 'Baker', value: 'baker' },
-  { label: 'Handy Services', value: 'handy-services' },
-]
+
 
 const cities = ['All Cities', 'Toronto', 'Calgary', 'Edmonton', 'Ottawa', 'Vancouver', 'Montreal']
 
@@ -196,13 +185,28 @@ function BrowseContent() {
   const [city, setCity] = useState('All Cities')
   const [view, setView] = useState<'grid' | 'map'>('grid')
   const [sortBy, setSortBy] = useState('featured')
-  const [businesses, setBusinesses] = useState<Business[]>(sampleBusinesses as Business[])
+  const [businesses, setBusinesses] = useState<Business[]>([])
+  const [categories, setCategories] = useState<{ label: string; value: string }[]>([{ label: 'All', value: '' }])
   const [loadingData, setLoadingData] = useState(false)
   const [usingRealData, setUsingRealData] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const cardRefs = useRef<Record<string | number, HTMLDivElement | null>>({})
+
+  useEffect(() => {
+    fetch('/api/admin/categories')
+      .then(r => r.json())
+      .then(data => {
+        if (data.categories?.length) {
+          setCategories([
+            { label: 'All', value: '' },
+            ...data.categories.map((c: any) => ({ label: c.name, value: c.slug }))
+          ])
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const cat = searchParams.get('category')
