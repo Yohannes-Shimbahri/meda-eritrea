@@ -70,26 +70,25 @@ export default function BusinessRegisterPage() {
   const labelStyle = { display: 'block', fontSize: '0.85rem', fontWeight: '600' as const, color: '#ccc', marginBottom: '0.5rem' }
   const optionCardStyle = (selected: boolean) => ({
     border: selected ? '2px solid #c9933a' : '2px solid #222', borderRadius: '1rem',
-    padding: '1.25rem 1.5rem', cursor: 'pointer', transition: 'all 0.2s',
-    backgroundColor: selected ? '#1a1200' : '#111', display: 'flex', alignItems: 'center', gap: '1rem',
+    padding: '1rem 1.25rem', cursor: 'pointer', transition: 'all 0.2s',
+    backgroundColor: selected ? '#1a1200' : '#111', display: 'flex', alignItems: 'center', gap: '0.875rem',
   })
 
   return (
     <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-      <nav style={{ borderBottom: '1px solid #222', padding: '1rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <nav style={{ borderBottom: '1px solid #222', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href="/" style={{ fontSize: '1.5rem', fontWeight: '800', color: '#c9933a', textDecoration: 'none' }}>Meda</Link>
-        <span style={{ color: '#888', fontSize: '0.9rem' }}>
-          <span className="hide-mobile">Already have an account?{' '}</span>
+        <span style={{ color: '#888', fontSize: '0.875rem' }}>
+          <span className="hide-mobile">Already have an account? </span>
           <Link href="/login" style={{ color: '#c9933a', textDecoration: 'none', fontWeight: '600' }}>Sign in</Link>
         </span>
       </nav>
 
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem 1rem' }}>
         <div style={{ width: '100%', maxWidth: '500px', animation: 'fadeInUp 0.5s ease both' }}>
 
-          {/* PROGRESS BAR */}
-          <div style={{ marginBottom: '2rem' }}>
+          <div style={{ marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
               <span style={{ fontSize: '0.8rem', color: '#888' }}>Step {step} of {TOTAL_STEPS}</span>
               <span style={{ fontSize: '0.8rem', color: '#c9933a', fontWeight: '600' }}>{Math.round((step / TOTAL_STEPS) * 100)}% complete</span>
@@ -100,14 +99,14 @@ export default function BusinessRegisterPage() {
           </div>
 
           {error && (
-            <div style={{ background: '#1a0a0a', border: '1px solid #e05c5c', borderRadius: '0.75rem', padding: '0.875rem 1rem', color: '#e05c5c', fontSize: '0.9rem', marginBottom: '1.5rem' }}>{error}</div>
+            <div style={{ background: '#1a0a0a', border: '1px solid #e05c5c', borderRadius: '0.75rem', padding: '0.875rem 1rem', color: '#e05c5c', fontSize: '0.875rem', marginBottom: '1.25rem' }}>{error}</div>
           )}
 
           {step === 1 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
-                <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.4rem' }}>Create your business account</h1>
-                <p style={{ color: '#888', fontSize: '0.95rem' }}>Start by creating your personal login credentials</p>
+                <h1 style={{ fontSize: 'clamp(1.35rem, 5vw, 1.75rem)', fontWeight: '800', marginBottom: '0.4rem' }}>Create your business account</h1>
+                <p style={{ color: '#888', fontSize: '0.9rem' }}>Start by creating your personal login credentials</p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div><label style={labelStyle}>Your Full Name</label><input type="text" value={form.ownerName} onChange={e => update('ownerName', e.target.value)} placeholder="John Doe" style={inputStyle} onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')} onBlur={e => (e.currentTarget.style.borderColor = '#333')} /></div>
@@ -125,10 +124,10 @@ export default function BusinessRegisterPage() {
           )}
 
           {step === 2 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
-                <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.4rem' }}>Tell us about your business</h1>
-                <p style={{ color: '#888', fontSize: '0.95rem' }}>This is how clients will find you on Meda</p>
+                <h1 style={{ fontSize: 'clamp(1.35rem, 5vw, 1.75rem)', fontWeight: '800', marginBottom: '0.4rem' }}>Tell us about your business</h1>
+                <p style={{ color: '#888', fontSize: '0.9rem' }}>This is how clients will find you on Meda</p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div><label style={labelStyle}>Business Name</label><input type="text" value={form.businessName} onChange={e => update('businessName', e.target.value)} placeholder="e.g. Selam Hair Studio" style={inputStyle} onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')} onBlur={e => (e.currentTarget.style.borderColor = '#333')} /></div>
@@ -151,43 +150,43 @@ export default function BusinessRegisterPage() {
           )}
 
           {step === 3 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
-                <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.4rem' }}>How do you operate?</h1>
-                <p style={{ color: '#888', fontSize: '0.95rem' }}>This determines how your profile is set up</p>
+                <h1 style={{ fontSize: 'clamp(1.35rem, 5vw, 1.75rem)', fontWeight: '800', marginBottom: '0.4rem' }}>How do you operate?</h1>
+                <p style={{ color: '#888', fontSize: '0.9rem' }}>This determines how your profile is set up</p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div onClick={() => update('size', 'SOLO')} style={optionCardStyle(form.size === 'SOLO')}>
-                  <span style={{ fontSize: '2rem' }}>🙋</span>
-                  <div><div style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '0.25rem' }}>Just me</div><div style={{ color: '#888', fontSize: '0.85rem' }}>I work alone — one schedule, one profile</div></div>
+                  <span style={{ fontSize: '1.75rem', flexShrink: 0 }}>🙋</span>
+                  <div><div style={{ fontWeight: '700', fontSize: '0.95rem', marginBottom: '0.25rem' }}>Just me</div><div style={{ color: '#888', fontSize: '0.82rem' }}>I work alone — one schedule, one profile</div></div>
                 </div>
                 <div onClick={() => update('size', 'TEAM')} style={optionCardStyle(form.size === 'TEAM')}>
-                  <span style={{ fontSize: '2rem' }}>👥</span>
-                  <div><div style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '0.25rem' }}>I have a team</div><div style={{ color: '#888', fontSize: '0.85rem' }}>Multiple employees, each with their own schedule</div></div>
+                  <span style={{ fontSize: '1.75rem', flexShrink: 0 }}>👥</span>
+                  <div><div style={{ fontWeight: '700', fontSize: '0.95rem', marginBottom: '0.25rem' }}>I have a team</div><div style={{ color: '#888', fontSize: '0.82rem' }}>Multiple employees, each with their own schedule</div></div>
                 </div>
               </div>
             </div>
           )}
 
           {step === 4 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
-                <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.4rem' }}>Do you want online booking?</h1>
-                <p style={{ color: '#888', fontSize: '0.95rem' }}>Clients will be able to book appointments directly through Meda</p>
+                <h1 style={{ fontSize: 'clamp(1.35rem, 5vw, 1.75rem)', fontWeight: '800', marginBottom: '0.4rem' }}>Do you want online booking?</h1>
+                <p style={{ color: '#888', fontSize: '0.9rem' }}>Clients can book appointments directly through Meda</p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div onClick={() => update('hasBooking', 'yes')} style={optionCardStyle(form.hasBooking === 'yes')}>
-                  <span style={{ fontSize: '2rem' }}>📅</span>
-                  <div><div style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '0.25rem' }}>Yes, enable booking</div><div style={{ color: '#888', fontSize: '0.85rem' }}>Clients can book appointments through your profile</div></div>
+                  <span style={{ fontSize: '1.75rem', flexShrink: 0 }}>📅</span>
+                  <div><div style={{ fontWeight: '700', fontSize: '0.95rem', marginBottom: '0.25rem' }}>Yes, enable booking</div><div style={{ color: '#888', fontSize: '0.82rem' }}>Clients can book appointments through your profile</div></div>
                 </div>
                 <div onClick={() => update('hasBooking', 'no')} style={optionCardStyle(form.hasBooking === 'no')}>
-                  <span style={{ fontSize: '2rem' }}>📋</span>
-                  <div><div style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '0.25rem' }}>No, just show my info</div><div style={{ color: '#888', fontSize: '0.85rem' }}>Display your profile and let clients contact you directly</div></div>
+                  <span style={{ fontSize: '1.75rem', flexShrink: 0 }}>📋</span>
+                  <div><div style={{ fontWeight: '700', fontSize: '0.95rem', marginBottom: '0.25rem' }}>No, just show my info</div><div style={{ color: '#888', fontSize: '0.82rem' }}>Display your profile and let clients contact you directly</div></div>
                 </div>
                 {form.hasBooking === 'yes' && (
                   <div style={{ marginTop: '0.5rem' }}>
-                    <p style={{ color: '#ccc', fontSize: '0.9rem', fontWeight: '600', marginBottom: '0.75rem' }}>Do you also accept walk-ins?</p>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
+                    <p style={{ color: '#ccc', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.75rem' }}>Do you also accept walk-ins?</p>
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
                       <div onClick={() => update('acceptsWalkIns', 'yes')} style={{ ...optionCardStyle(form.acceptsWalkIns === 'yes'), flex: 1, justifyContent: 'center', padding: '1rem' }}><span style={{ fontWeight: '700' }}>Yes</span></div>
                       <div onClick={() => update('acceptsWalkIns', 'no')} style={{ ...optionCardStyle(form.acceptsWalkIns === 'no'), flex: 1, justifyContent: 'center', padding: '1rem' }}><span style={{ fontWeight: '700' }}>No</span></div>
                     </div>
@@ -197,34 +196,34 @@ export default function BusinessRegisterPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+          <div style={{ display: 'flex', gap: '0.875rem', marginTop: '1.75rem' }}>
             {step > 1 && (
-              <button onClick={() => setStep(s => s - 1)} style={{ flex: 1, backgroundColor: '#111', border: '1px solid #333', color: '#f5f0e8', padding: '1rem', borderRadius: '0.75rem', fontWeight: '600', fontSize: '1rem', cursor: 'pointer', transition: 'all 0.2s' }}
+              <button onClick={() => setStep(s => s - 1)} style={{ flex: 1, backgroundColor: '#111', border: '1px solid #333', color: '#f5f0e8', padding: '1rem', borderRadius: '0.75rem', fontWeight: '600', fontSize: '0.95rem', cursor: 'pointer', transition: 'all 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = '#c9933a')}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = '#333')}>
-                ← Back
+                Back
               </button>
             )}
             {step < TOTAL_STEPS ? (
-              <button onClick={nextStep} style={{ flex: 2, backgroundColor: '#c9933a', color: '#0a0a0a', padding: '1rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '1rem', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+              <button onClick={nextStep} style={{ flex: 2, backgroundColor: '#c9933a', color: '#0a0a0a', padding: '1rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '0.95rem', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#b07d2a')}
                 onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#c9933a')}>
-                Continue →
+                Continue
               </button>
             ) : (
-              <button onClick={handleSubmit} disabled={loading} style={{ flex: 2, backgroundColor: loading ? '#7a5820' : '#c9933a', color: '#0a0a0a', padding: '1rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '1rem', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                {loading ? (<><span style={{ width: '16px', height: '16px', border: '2px solid #0a0a0a', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />Creating your business...</>) : '🎉 Create My Business'}
+              <button onClick={handleSubmit} disabled={loading} style={{ flex: 2, backgroundColor: loading ? '#7a5820' : '#c9933a', color: '#0a0a0a', padding: '1rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '0.95rem', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                {loading ? (<><span style={{ width: '16px', height: '16px', border: '2px solid #0a0a0a', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />Creating...</>) : 'Create My Business'}
               </button>
             )}
           </div>
 
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer', marginTop: '1.5rem' }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer', marginTop: '1.25rem' }}>
             <input type="checkbox" checked={form.agreedToTerms}
               onChange={e => setForm(prev => ({ ...prev, agreedToTerms: e.target.checked }))}
               style={{ marginTop: '2px', accentColor: '#c9933a', width: '16px', height: '16px', flexShrink: 0, cursor: 'pointer' }} />
-            <span style={{ color: '#888', fontSize: '0.85rem', lineHeight: 1.5 }}>
+            <span style={{ color: '#888', fontSize: '0.82rem', lineHeight: 1.5 }}>
               I agree to Meda&apos;s{' '}
-              <Link href="/terms" target="_blank" style={{ color: '#c9933a', textDecoration: 'underline' }}>Terms & Conditions</Link>
+              <Link href="/terms" target="_blank" style={{ color: '#c9933a', textDecoration: 'underline' }}>Terms &amp; Conditions</Link>
               {' '}and{' '}
               <Link href="/privacy" target="_blank" style={{ color: '#c9933a', textDecoration: 'underline' }}>Privacy Policy</Link>
             </span>
