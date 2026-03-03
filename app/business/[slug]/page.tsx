@@ -23,7 +23,7 @@ export default function BusinessProfile() {
   const [bookingSuccess, setBookingSuccess] = useState(false)
   const [portfolio, setPortfolio] = useState<{ id: string; url: string }[]>([])
   const [lightboxImg, setLightboxImg] = useState<string | null>(null)
-  const [bookingOpen, setBookingOpen] = useState(false) // mobile booking panel
+  const [bookingOpen, setBookingOpen] = useState(false)
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewComment, setReviewComment] = useState('')
   const [reviewLoading, setReviewLoading] = useState(false)
@@ -152,7 +152,7 @@ export default function BusinessProfile() {
 
   const avgRating = reviews.length > 0 ? (reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length).toFixed(1) : null
   const categoryLabel = (typeof business.category === 'object' ? business.category?.name : business.category)?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
-  // Booking panel content (shared between desktop sidebar and mobile drawer)
+
   const BookingPanel = () => (
     <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '1.25rem', padding: '1.25rem' }}>
       <h3 style={{ fontWeight: '800', fontSize: '1rem', marginBottom: '1.1rem' }}>Book Appointment</h3>
@@ -250,10 +250,10 @@ export default function BusinessProfile() {
     <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', color: '#f5f0e8', paddingBottom: '5rem' }}>
 
       {/* NAVBAR */}
-      <nav style={{ borderBottom: '1px solid #222', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, backgroundColor: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)' }}>
+      <nav style={{ borderBottom: '1px solid #222', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, backgroundColor: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)' }}>
         <Link href="/" style={{ fontSize: '1.5rem', fontWeight: '800', color: '#c9933a', textDecoration: 'none' }}>Meda</Link>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <Link href="/browse" style={{ color: '#888', fontSize: '0.9rem', textDecoration: 'none' }}>← Browse</Link>
+          <Link href="/browse" style={{ color: '#888', fontSize: '0.85rem', textDecoration: 'none' }}>← Browse</Link>
           {user ? (
             <div style={{ width: '34px', height: '34px', borderRadius: '50%', backgroundColor: '#c9933a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.85rem', color: '#0a0a0a', flexShrink: 0 }}>
               {(user.user_metadata?.full_name || user.email || 'U').charAt(0).toUpperCase()}
@@ -265,7 +265,7 @@ export default function BusinessProfile() {
       </nav>
 
       {/* COVER */}
-      <div style={{ height: 'clamp(140px, 25vw, 220px)', backgroundColor: '#111', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ height: 'clamp(120px, 22vw, 220px)', backgroundColor: '#111', position: 'relative', overflow: 'hidden' }}>
         {business.media?.find((m: any) => m.caption === 'cover')?.url ? (
           <img src={business.media.find((m: any) => m.caption === 'cover').url} alt="cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
@@ -276,34 +276,33 @@ export default function BusinessProfile() {
         )}
       </div>
 
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 1.25rem' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 1rem' }}>
 
         {/* PROFILE HEADER */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem', marginTop: '-10px', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-          <div style={{ width: 'clamp(72px, 15vw, 100px)', height: 'clamp(72px, 15vw, 100px)', borderRadius: '1rem', backgroundColor: '#222', border: '3px solid #0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', flexShrink: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.875rem', marginTop: '-10px', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+          <div style={{ width: 'clamp(64px, 14vw, 100px)', height: 'clamp(64px, 14vw, 100px)', borderRadius: '1rem', backgroundColor: '#222', border: '3px solid #0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', flexShrink: 0, overflow: 'hidden' }}>
             {business.media?.find((m: any) => m.caption === 'logo')?.url
               ? <img src={business.media.find((m: any) => m.caption === 'logo').url} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : business.name?.charAt(0).toUpperCase()}
           </div>
           <div style={{ flex: 1, paddingBottom: '0.5rem', minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.3rem' }}>
-              <h1 style={{ fontSize: 'clamp(1.2rem, 5vw, 1.75rem)', fontWeight: '800', margin: 0 }}>{business.name}</h1>
+              <h1 style={{ fontSize: 'clamp(1.1rem, 4.5vw, 1.75rem)', fontWeight: '800', margin: 0 }}>{business.name}</h1>
               {business.isVerified && <span style={{ backgroundColor: '#4ade8022', color: '#4ade80', padding: '0.2rem 0.5rem', borderRadius: '1rem', fontSize: '0.7rem', fontWeight: '700' }}>✓ Verified</span>}
               {business.subscription === 'PRO' && <span style={{ backgroundColor: '#c9933a', color: '#0a0a0a', padding: '0.2rem 0.5rem', borderRadius: '1rem', fontSize: '0.7rem', fontWeight: '800' }}>⭐ PRO</span>}
             </div>
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <span style={{ color: '#888', fontSize: '0.85rem' }}>📍 {business.city}, {business.province}</span>
-              <span style={{ color: '#888', fontSize: '0.85rem' }}>✂️ {categoryLabel}</span>
-              {avgRating ? <span style={{ color: '#f5c842', fontSize: '0.85rem' }}>★ {avgRating} ({reviews.length})</span> : <span style={{ color: '#555', fontSize: '0.85rem' }}>No reviews yet</span>}
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span style={{ color: '#888', fontSize: '0.82rem' }}>📍 {business.city}, {business.province}</span>
+              <span style={{ color: '#888', fontSize: '0.82rem' }}>✂️ {categoryLabel}</span>
+              {avgRating ? <span style={{ color: '#f5c842', fontSize: '0.82rem' }}>★ {avgRating} ({reviews.length})</span> : <span style={{ color: '#555', fontSize: '0.82rem' }}>No reviews yet</span>}
             </div>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', paddingBottom: '0.5rem' }}>
-            <button onClick={handleSave} disabled={saveLoading} style={{ padding: '0.55rem 1rem', borderRadius: '0.75rem', border: `1px solid ${saved ? '#c9933a' : '#333'}`, backgroundColor: saved ? '#c9933a22' : 'transparent', color: saved ? '#c9933a' : '#888', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem' }}>
+            <button onClick={handleSave} disabled={saveLoading} style={{ padding: '0.5rem 0.875rem', borderRadius: '0.75rem', border: `1px solid ${saved ? '#c9933a' : '#333'}`, backgroundColor: saved ? '#c9933a22' : 'transparent', color: saved ? '#c9933a' : '#888', cursor: 'pointer', fontWeight: '600', fontSize: '0.82rem' }}>
               {saveLoading ? '...' : saved ? '♥ Saved' : '♡ Save'}
             </button>
-            {business.phone && <a href={`tel:${business.phone}`} style={{ padding: '0.55rem 1rem', borderRadius: '0.75rem', border: '1px solid #333', backgroundColor: '#111', color: '#f5f0e8', textDecoration: 'none', fontWeight: '600', fontSize: '0.85rem' }}>📞 Call</a>}
-            {/* Mobile book button */}
-            <button className="mobile-book-btn" onClick={() => setBookingOpen(true)} style={{ display: 'none', padding: '0.55rem 1rem', borderRadius: '0.75rem', border: 'none', backgroundColor: '#c9933a', color: '#0a0a0a', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>
+            {business.phone && <a href={`tel:${business.phone}`} style={{ padding: '0.5rem 0.875rem', borderRadius: '0.75rem', border: '1px solid #333', backgroundColor: '#111', color: '#f5f0e8', textDecoration: 'none', fontWeight: '600', fontSize: '0.82rem' }}>📞 Call</a>}
+            <button className="mobile-book-btn" onClick={() => setBookingOpen(true)} style={{ display: 'none', padding: '0.5rem 0.875rem', borderRadius: '0.75rem', border: 'none', backgroundColor: '#c9933a', color: '#0a0a0a', fontWeight: '700', fontSize: '0.82rem', cursor: 'pointer' }}>
               📅 Book
             </button>
           </div>
@@ -311,8 +310,8 @@ export default function BusinessProfile() {
 
         {/* BIO */}
         {business.description && (
-          <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1rem', padding: '1.1rem 1.25rem', marginBottom: '1.25rem' }}>
-            <p style={{ color: '#ccc', lineHeight: '1.7', margin: 0, fontSize: '0.9rem' }}>{business.description}</p>
+          <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1rem', padding: '1rem', marginBottom: '1.25rem' }}>
+            <p style={{ color: '#ccc', lineHeight: '1.7', margin: 0, fontSize: '0.875rem' }}>{business.description}</p>
           </div>
         )}
 
@@ -321,10 +320,9 @@ export default function BusinessProfile() {
 
           {/* LEFT — TABS */}
           <div>
-            {/* Tab bar — scrollable on mobile */}
             <div style={{ display: 'flex', gap: '0.2rem', backgroundColor: '#111', borderRadius: '1rem', padding: '0.25rem', marginBottom: '1.25rem', border: '1px solid #222', overflowX: 'auto' }}>
               {['posts', 'services', 'employees', 'reviews', 'hours'].map(tab => (
-                <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: '0 0 auto', padding: '0.55rem 0.875rem', borderRadius: '0.75rem', border: 'none', cursor: 'pointer', backgroundColor: activeTab === tab ? '#c9933a' : 'transparent', color: activeTab === tab ? '#0a0a0a' : '#888', fontWeight: '600', fontSize: '0.8rem', textTransform: 'capitalize' as const, transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
+                <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: '0 0 auto', padding: '0.5rem 0.75rem', borderRadius: '0.75rem', border: 'none', cursor: 'pointer', backgroundColor: activeTab === tab ? '#c9933a' : 'transparent', color: activeTab === tab ? '#0a0a0a' : '#888', fontWeight: '600', fontSize: '0.78rem', textTransform: 'capitalize' as const, transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
                   {tab === 'posts' ? '📸 Posts' : tab}
                   {tab === 'reviews' && reviews.length > 0 ? ` (${reviews.length})` : ''}
                   {tab === 'posts' && portfolio.length > 0 ? ` (${portfolio.length})` : ''}
@@ -338,7 +336,7 @@ export default function BusinessProfile() {
                 {portfolio.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '3rem', color: '#888' }}><div style={{ fontSize: '2rem' }}>🖼️</div><p>No portfolio photos yet</p></div>
                 ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.625rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.5rem' }}>
                     {portfolio.map(item => (
                       <div key={item.id} onClick={() => setLightboxImg(item.url)}
                         style={{ aspectRatio: '1' as never, borderRadius: '0.75rem', overflow: 'hidden', cursor: 'pointer', backgroundColor: '#111', border: '1px solid #222', transition: 'transform 0.2s, border-color 0.2s' }}
@@ -359,16 +357,16 @@ export default function BusinessProfile() {
                 {business.services?.map((service: any) => (
                   <div key={service.id} onClick={() => setSelectedService(selectedService === service.name ? null : service.name)}
                     style={{ backgroundColor: '#111', border: `2px solid ${selectedService === service.name ? '#c9933a' : '#222'}`, borderRadius: '1rem', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s', transform: selectedService === service.name ? 'scale(1.02)' : 'scale(1)' }}>
-                    <div style={{ height: '120px', backgroundColor: '#1a1a1a', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ height: '110px', backgroundColor: '#1a1a1a', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {service.media?.[0]?.url ? <img src={service.media[0].url} alt={service.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ fontSize: '2.5rem' }}>💼</div>}
                       {selectedService === service.name && <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', backgroundColor: '#c9933a', color: '#0a0a0a', padding: '0.2rem 0.5rem', borderRadius: '1rem', fontSize: '0.65rem', fontWeight: '800' }}>✓ Selected</div>}
                     </div>
-                    <div style={{ padding: '0.875rem' }}>
+                    <div style={{ padding: '0.75rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                        <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{service.name}</span>
-                        <span style={{ color: '#c9933a', fontWeight: '800', fontSize: '0.9rem' }}>${service.price}</span>
+                        <span style={{ fontWeight: '700', fontSize: '0.875rem' }}>{service.name}</span>
+                        <span style={{ color: '#c9933a', fontWeight: '800', fontSize: '0.875rem' }}>${service.price}</span>
                       </div>
-                      {service.duration && <div style={{ color: '#888', fontSize: '0.78rem' }}>⏱ {service.duration} mins</div>}
+                      {service.duration && <div style={{ color: '#888', fontSize: '0.75rem' }}>⏱ {service.duration} mins</div>}
                     </div>
                   </div>
                 ))}
@@ -378,19 +376,19 @@ export default function BusinessProfile() {
             {/* Employees */}
             {activeTab === 'employees' && (
               <div className="employees-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.875rem', animation: 'fadeInUp 0.3s ease both' }}>
-                <div onClick={() => setSelectedEmployee(null)} style={{ backgroundColor: '#111', border: `2px solid ${selectedEmployee === null ? '#c9933a' : '#222'}`, borderRadius: '1rem', padding: '1.1rem', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s' }}>
+                <div onClick={() => setSelectedEmployee(null)} style={{ backgroundColor: '#111', border: `2px solid ${selectedEmployee === null ? '#c9933a' : '#222'}`, borderRadius: '1rem', padding: '1rem', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s' }}>
                   <div style={{ fontSize: '1.75rem', marginBottom: '0.4rem' }}>🎲</div>
-                  <div style={{ fontWeight: '700', fontSize: '0.85rem' }}>No Preference</div>
-                  <div style={{ color: '#888', fontSize: '0.75rem' }}>Any available</div>
+                  <div style={{ fontWeight: '700', fontSize: '0.82rem' }}>No Preference</div>
+                  <div style={{ color: '#888', fontSize: '0.72rem' }}>Any available</div>
                 </div>
                 {business.employees?.map((emp: any) => (
                   <div key={emp.id} onClick={() => setSelectedEmployee(selectedEmployee === emp.name ? null : emp.name)}
-                    style={{ backgroundColor: '#111', border: `2px solid ${selectedEmployee === emp.name ? '#c9933a' : '#222'}`, borderRadius: '1rem', padding: '1.1rem', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#222', margin: '0 auto 0.625rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', overflow: 'hidden' }}>
+                    style={{ backgroundColor: '#111', border: `2px solid ${selectedEmployee === emp.name ? '#c9933a' : '#222'}`, borderRadius: '1rem', padding: '1rem', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s' }}>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#222', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', overflow: 'hidden' }}>
                       {emp.avatarUrl ? <img src={emp.avatarUrl} alt={emp.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '👤'}
                     </div>
-                    <div style={{ fontWeight: '700', fontSize: '0.85rem' }}>{emp.name}</div>
-                    {emp.specialty && <div style={{ color: '#888', fontSize: '0.75rem' }}>{emp.specialty}</div>}
+                    <div style={{ fontWeight: '700', fontSize: '0.82rem' }}>{emp.name}</div>
+                    {emp.specialty && <div style={{ color: '#888', fontSize: '0.72rem' }}>{emp.specialty}</div>}
                   </div>
                 ))}
               </div>
@@ -404,30 +402,29 @@ export default function BusinessProfile() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginBottom: '1.25rem' }}>
                     {reviews.map((review: any) => (
-                      <div key={review.id} style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1rem', padding: '1.1rem' }}>
+                      <div key={review.id} style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1rem', padding: '1rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.625rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
                             <div style={{ width: '34px', height: '34px', borderRadius: '50%', backgroundColor: '#222', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: '#c9933a', flexShrink: 0 }}>{review.client?.fullName?.charAt(0) || '?'}</div>
                             <div>
-                              <div style={{ fontWeight: '700', fontSize: '0.87rem' }}>{review.client?.fullName || 'Anonymous'}</div>
-                              <div style={{ color: '#f5c842', fontSize: '0.85rem' }}>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</div>
+                              <div style={{ fontWeight: '700', fontSize: '0.85rem' }}>{review.client?.fullName || 'Anonymous'}</div>
+                              <div style={{ color: '#f5c842', fontSize: '0.82rem' }}>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</div>
                             </div>
                           </div>
-                          <span style={{ color: '#555', fontSize: '0.78rem' }}>{new Date(review.createdAt).toLocaleDateString()}</span>
+                          <span style={{ color: '#555', fontSize: '0.75rem' }}>{new Date(review.createdAt).toLocaleDateString()}</span>
                         </div>
-                        {review.comment && <p style={{ color: '#ccc', fontSize: '0.87rem', lineHeight: '1.6', margin: 0 }}>{review.comment}</p>}
+                        {review.comment && <p style={{ color: '#ccc', fontSize: '0.85rem', lineHeight: '1.6', margin: 0 }}>{review.comment}</p>}
                         {review.response && (
                           <div style={{ marginTop: '0.875rem', padding: '0.75rem', backgroundColor: '#0a0a0a', borderRadius: '0.75rem', borderLeft: '3px solid #c9933a' }}>
                             <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#c9933a', marginBottom: '0.35rem' }}>{business.name} · Response</div>
-                            <p style={{ color: '#888', fontSize: '0.82rem', margin: 0 }}>{review.response}</p>
+                            <p style={{ color: '#888', fontSize: '0.8rem', margin: 0 }}>{review.response}</p>
                           </div>
                         )}
                       </div>
                     ))}
                   </div>
                 )}
-                {/* Write review */}
-                <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1rem', padding: '1.1rem' }}>
+                <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1rem', padding: '1rem' }}>
                   <h4 style={{ fontWeight: '700', marginBottom: '0.875rem', fontSize: '0.9rem' }}>{user ? 'Leave a Review' : 'Sign in to leave a review'}</h4>
                   {user ? (
                     <>
@@ -463,9 +460,9 @@ export default function BusinessProfile() {
                 {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, i) => {
                   const h = business.businessHours?.find((bh: any) => bh.dayOfWeek === i)
                   return (
-                    <div key={day} style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '0.75rem', padding: '0.75rem 1.1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: '600', fontSize: '0.875rem' }}>{day}</span>
-                      <span style={{ color: h?.isClosed ? '#e05c5c' : '#4ade80', fontSize: '0.875rem' }}>
+                    <div key={day} style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '0.75rem', padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>{day}</span>
+                      <span style={{ color: h?.isClosed ? '#e05c5c' : '#4ade80', fontSize: '0.85rem' }}>
                         {!h ? 'Not set' : h.isClosed ? 'Closed' : `${h.openTime} – ${h.closeTime}`}
                       </span>
                     </div>
@@ -497,15 +494,15 @@ export default function BusinessProfile() {
       )}
 
       {/* MOBILE STICKY BOOK BAR */}
-      <div className="mobile-book-bar" style={{ display: 'none', position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200, backgroundColor: 'rgba(10,10,10,0.97)', borderTop: '1px solid #222', padding: '0.875rem 1.25rem', gap: '0.75rem', alignItems: 'center' }}>
+      <div className="mobile-book-bar" style={{ display: 'none', position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200, backgroundColor: 'rgba(10,10,10,0.97)', borderTop: '1px solid #222', padding: '0.875rem 1rem', gap: '0.75rem', alignItems: 'center' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: '700', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{business.name}</div>
-          {avgRating && <div style={{ color: '#f5c842', fontSize: '0.78rem' }}>★ {avgRating} · {reviews.length} reviews</div>}
+          <div style={{ fontWeight: '700', fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{business.name}</div>
+          {avgRating && <div style={{ color: '#f5c842', fontSize: '0.75rem' }}>★ {avgRating} · {reviews.length} reviews</div>}
         </div>
         <button onClick={handleSave} style={{ padding: '0.65rem 1rem', borderRadius: '0.75rem', border: `1px solid ${saved ? '#c9933a' : '#333'}`, backgroundColor: 'transparent', color: saved ? '#c9933a' : '#888', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem', flexShrink: 0 }}>
           {saved ? '♥' : '♡'}
         </button>
-        <button onClick={() => setBookingOpen(true)} style={{ backgroundColor: '#c9933a', color: '#0a0a0a', border: 'none', padding: '0.65rem 1.5rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '0.9rem', cursor: 'pointer', flexShrink: 0 }}>
+        <button onClick={() => setBookingOpen(true)} style={{ backgroundColor: '#c9933a', color: '#0a0a0a', border: 'none', padding: '0.65rem 1.5rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '0.875rem', cursor: 'pointer', flexShrink: 0 }}>
           📅 Book Now
         </button>
       </div>
@@ -523,29 +520,15 @@ export default function BusinessProfile() {
         @keyframes spin { to { transform: rotate(360deg); } }
 
         @media (max-width: 768px) {
-          .profile-layout {
-            grid-template-columns: 1fr !important;
-          }
-          .booking-sidebar {
-            display: none !important;
-          }
-          .mobile-book-bar {
-            display: flex !important;
-          }
-          .services-grid {
-            grid-template-columns: 1fr 1fr !important;
-          }
-          .employees-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
+          .profile-layout { grid-template-columns: 1fr !important; }
+          .booking-sidebar { display: none !important; }
+          .mobile-book-bar { display: flex !important; }
+          .services-grid { grid-template-columns: 1fr 1fr !important; }
+          .employees-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
         @media (max-width: 480px) {
-          .services-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .employees-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
+          .services-grid { grid-template-columns: 1fr !important; }
+          .employees-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
       `}</style>
     </main>

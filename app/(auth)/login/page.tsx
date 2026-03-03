@@ -40,67 +40,45 @@ export default function LoginPage() {
     <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
       {/* NAVBAR */}
-      <nav style={{ borderBottom: '1px solid #222', padding: '1rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ fontSize: '1.5rem', fontWeight: '800', color: '#c9933a', textDecoration: 'none' }}>
-          Meda
-        </Link>
-        <span style={{ color: '#888', fontSize: '0.9rem' }}>
+      <nav style={{ borderBottom: '1px solid #222', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Link href="/" style={{ fontSize: '1.5rem', fontWeight: '800', color: '#c9933a', textDecoration: 'none' }}>Meda</Link>
+        <span style={{ color: '#888', fontSize: '0.875rem' }}>
           <span className="hide-mobile">Don&apos;t have an account?{' '}</span>
-          <Link href="/register/client" style={{ color: '#c9933a', textDecoration: 'none', fontWeight: '600' }}>
-            Sign up
-          </Link>
+          <Link href="/register/client" style={{ color: '#c9933a', textDecoration: 'none', fontWeight: '600' }}>Sign up</Link>
         </span>
       </nav>
 
       {/* FORM */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem 1rem' }}>
         <div style={{ width: '100%', maxWidth: '440px', animation: 'fadeInUp 0.5s ease both' }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '0.5rem' }}>Welcome back</h1>
-          <p style={{ color: '#888', marginBottom: '2rem', fontSize: '0.95rem' }}>
-            Sign in to your Meda account
-          </p>
+          <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', fontWeight: '800', marginBottom: '0.5rem' }}>Welcome back</h1>
+          <p style={{ color: '#888', marginBottom: '1.75rem', fontSize: '0.9rem' }}>Sign in to your Meda account</p>
 
           {error && (
-            <div style={{
-              background: '#1a0a0a', border: '1px solid #e05c5c',
-              borderRadius: '0.75rem', padding: '0.875rem 1rem',
-              color: '#e05c5c', fontSize: '0.9rem', marginBottom: '1.5rem',
-            }}>
+            <div style={{ background: '#1a0a0a', border: '1px solid #e05c5c', borderRadius: '0.75rem', padding: '0.875rem 1rem', color: '#e05c5c', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
               {error}
             </div>
           )}
 
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#ccc', marginBottom: '0.5rem' }}>
-                Email address
-              </label>
-              <input
-                type="email" value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com" required
-                style={{ width: '100%', background: '#111', border: '1px solid #333', borderRadius: '0.75rem', padding: '0.875rem 1rem', color: '#f5f0e8', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#ccc', marginBottom: '0.5rem' }}>Email address</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" required
+                style={{ width: '100%', background: '#111', border: '1px solid #333', borderRadius: '0.75rem', padding: '0.875rem 1rem', color: '#f5f0e8', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' as const, transition: 'border-color 0.2s' }}
                 onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')}
-                onBlur={e => (e.currentTarget.style.borderColor = '#333')}
-              />
+                onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
             </div>
 
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                 <label style={{ fontSize: '0.85rem', fontWeight: '600', color: '#ccc' }}>Password</label>
-                <Link href="/forgot-password" style={{ fontSize: '0.85rem', color: '#c9933a', textDecoration: 'none' }}>
-                  Forgot password?
-                </Link>
+                <Link href="/forgot-password" style={{ fontSize: '0.85rem', color: '#c9933a', textDecoration: 'none' }}>Forgot password?</Link>
               </div>
               <div style={{ position: 'relative' }}>
-                <input
-                  type={showPassword ? 'text' : 'password'} value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••" required
-                  style={{ width: '100%', background: '#111', border: '1px solid #333', borderRadius: '0.75rem', padding: '0.875rem 3rem 0.875rem 1rem', color: '#f5f0e8', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required
+                  style={{ width: '100%', background: '#111', border: '1px solid #333', borderRadius: '0.75rem', padding: '0.875rem 3rem 0.875rem 1rem', color: '#f5f0e8', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box' as const, transition: 'border-color 0.2s' }}
                   onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')}
-                  onBlur={e => (e.currentTarget.style.borderColor = '#333')}
-                />
+                  onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}
                   style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#888', fontSize: '1rem' }}>
                   {showPassword ? '🙈' : '👁️'}
@@ -109,15 +87,13 @@ export default function LoginPage() {
             </div>
 
             <button type="submit" disabled={loading}
-              style={{ backgroundColor: loading ? '#7a5820' : '#c9933a', color: '#0a0a0a', padding: '1rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '1rem', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              style={{ backgroundColor: loading ? '#7a5820' : '#c9933a', color: '#0a0a0a', padding: '1rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '1rem', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', marginTop: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
               onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#b07d2a' }}
               onMouseLeave={e => { if (!loading) e.currentTarget.style.backgroundColor = '#c9933a' }}>
-              {loading ? (
-                <><span style={{ width: '16px', height: '16px', border: '2px solid #0a0a0a', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />Signing in...</>
-              ) : 'Sign In'}
+              {loading ? (<><span style={{ width: '16px', height: '16px', border: '2px solid #0a0a0a', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />Signing in...</>) : 'Sign In'}
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '0.5rem 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '0.25rem 0' }}>
               <div style={{ flex: 1, height: '1px', backgroundColor: '#222' }} />
               <span style={{ color: '#555', fontSize: '0.85rem' }}>or</span>
               <div style={{ flex: 1, height: '1px', backgroundColor: '#222' }} />
@@ -135,14 +111,11 @@ export default function LoginPage() {
               </svg>
               Continue with Google
             </button>
-
           </form>
 
-          <p style={{ textAlign: 'center', color: '#555', fontSize: '0.85rem', marginTop: '2rem' }}>
+          <p style={{ textAlign: 'center', color: '#555', fontSize: '0.85rem', marginTop: '1.75rem' }}>
             Are you a business?{' '}
-            <Link href="/register/business" style={{ color: '#c9933a', textDecoration: 'none', fontWeight: '600' }}>
-              Register your business
-            </Link>
+            <Link href="/register/business" style={{ color: '#c9933a', textDecoration: 'none', fontWeight: '600' }}>Register your business</Link>
           </p>
         </div>
       </div>

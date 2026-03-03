@@ -5,8 +5,6 @@ import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-
-
 const cities = ['All Cities', 'Toronto', 'Calgary', 'Edmonton', 'Ottawa', 'Vancouver', 'Montreal']
 
 const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
@@ -32,15 +30,15 @@ const sampleBusinesses = [
 ]
 
 type Business = {
-  id: string | number; 
-  name: string; 
-  slug: string; 
+  id: string | number
+  name: string
+  slug: string
   category: string | { id: string; name: string; slug: string; icon: string } | null
   city: string
-  subscription: string; 
-  isVerified: boolean; 
-  coverImage: string | null; 
-  rating: number | null; 
+  subscription: string
+  isVerified: boolean
+  coverImage: string | null
+  rating: number | null
   reviewCount: number
 }
 
@@ -263,7 +261,7 @@ function BrowseContent() {
     <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', color: '#f5f0e8', display: 'flex', flexDirection: 'column' }}>
 
       {/* NAVBAR */}
-      <nav style={{ borderBottom: '1px solid #222', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 200, backgroundColor: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)' }}>
+      <nav style={{ borderBottom: '1px solid #222', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 200, backgroundColor: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)' }}>
         <Link href="/" style={{ fontSize: '1.5rem', fontWeight: '800', color: '#c9933a', textDecoration: 'none' }}>Meda</Link>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           {user ? (
@@ -277,29 +275,28 @@ function BrowseContent() {
           ) : (
             <>
               <Link href="/login" className="hide-mobile" style={{ color: '#888', fontSize: '0.9rem', textDecoration: 'none' }}>Login</Link>
-              <Link href="/register/client" style={{ backgroundColor: '#c9933a', color: '#0a0a0a', padding: '0.5rem 1.25rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '0.9rem', textDecoration: 'none', whiteSpace: 'nowrap' }}>Sign Up</Link>
+              <Link href="/register/client" style={{ backgroundColor: '#c9933a', color: '#0a0a0a', padding: '0.5rem 1rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '0.85rem', textDecoration: 'none', whiteSpace: 'nowrap' }}>Sign Up</Link>
             </>
           )}
         </div>
       </nav>
 
       {/* SEARCH HEADER */}
-      <div style={{ backgroundColor: '#111', borderBottom: '1px solid #222', padding: '1.25rem 1.5rem' }}>
-        <h1 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)', fontWeight: '800', marginBottom: '0.875rem' }}>Browse Habesha Businesses</h1>
+      <div style={{ backgroundColor: '#111', borderBottom: '1px solid #222', padding: '1rem' }}>
+        <h1 style={{ fontSize: 'clamp(1rem, 4vw, 1.5rem)', fontWeight: '800', marginBottom: '0.75rem' }}>Browse Habesha Businesses</h1>
 
         {/* Search + view toggle row */}
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search businesses..."
-            style={{ flex: 1, background: '#0a0a0a', border: '1px solid #333', borderRadius: '0.75rem', padding: '0.75rem 1rem', color: '#f5f0e8', fontSize: '0.9rem', outline: 'none', minWidth: 0 }}
+            style={{ flex: 1, background: '#0a0a0a', border: '1px solid #333', borderRadius: '0.75rem', padding: '0.7rem 0.875rem', color: '#f5f0e8', fontSize: '0.9rem', outline: 'none', minWidth: 0 }}
             onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')}
             onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
-          {/* Filter toggle on mobile */}
-          <button onClick={() => setFiltersOpen(!filtersOpen)} className="mobile-filter-btn" style={{ display: 'none', backgroundColor: filtersOpen ? '#c9933a' : '#0a0a0a', border: '1px solid #333', borderRadius: '0.75rem', padding: '0.75rem 1rem', color: filtersOpen ? '#0a0a0a' : '#888', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+          <button onClick={() => setFiltersOpen(!filtersOpen)} className="mobile-filter-btn" style={{ display: 'none', backgroundColor: filtersOpen ? '#c9933a' : '#0a0a0a', border: '1px solid #333', borderRadius: '0.75rem', padding: '0.7rem 0.875rem', color: filtersOpen ? '#0a0a0a' : '#888', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
             ⚙ Filter
           </button>
           <div style={{ display: 'flex', backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '0.75rem', overflow: 'hidden', flexShrink: 0 }}>
-            <button onClick={() => setView('grid')} style={{ padding: '0.75rem 0.875rem', border: 'none', cursor: 'pointer', backgroundColor: view === 'grid' ? '#c9933a' : 'transparent', color: view === 'grid' ? '#0a0a0a' : '#888', fontWeight: '600', fontSize: '0.85rem' }}>⊞</button>
-            <button onClick={() => setView('map')} style={{ padding: '0.75rem 0.875rem', border: 'none', cursor: 'pointer', backgroundColor: view === 'map' ? '#c9933a' : 'transparent', color: view === 'map' ? '#0a0a0a' : '#888', fontWeight: '600', fontSize: '0.85rem' }}>🗺</button>
+            <button onClick={() => setView('grid')} style={{ padding: '0.7rem 0.875rem', border: 'none', cursor: 'pointer', backgroundColor: view === 'grid' ? '#c9933a' : 'transparent', color: view === 'grid' ? '#0a0a0a' : '#888', fontWeight: '600', fontSize: '0.85rem' }}>⊞</button>
+            <button onClick={() => setView('map')} style={{ padding: '0.7rem 0.875rem', border: 'none', cursor: 'pointer', backgroundColor: view === 'map' ? '#c9933a' : 'transparent', color: view === 'map' ? '#0a0a0a' : '#888', fontWeight: '600', fontSize: '0.85rem' }}>🗺</button>
           </div>
         </div>
 
@@ -338,7 +335,7 @@ function BrowseContent() {
         {/* Category pills */}
         <div style={{ display: 'flex', gap: '0.4rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
           {categories.map(c => (
-            <button key={c.value} onClick={() => setCategory(c.value)} style={{ padding: '0.35rem 0.875rem', borderRadius: '2rem', border: '1px solid #333', backgroundColor: category === c.value ? '#c9933a' : 'transparent', color: category === c.value ? '#0a0a0a' : '#888', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600', whiteSpace: 'nowrap', transition: 'all 0.2s', flexShrink: 0 }}>
+            <button key={c.value} onClick={() => setCategory(c.value)} style={{ padding: '0.3rem 0.75rem', borderRadius: '2rem', border: '1px solid #333', backgroundColor: category === c.value ? '#c9933a' : 'transparent', color: category === c.value ? '#0a0a0a' : '#888', cursor: 'pointer', fontSize: '0.78rem', fontWeight: '600', whiteSpace: 'nowrap', transition: 'all 0.2s', flexShrink: 0 }}>
               {c.label}
             </button>
           ))}
@@ -346,8 +343,8 @@ function BrowseContent() {
       </div>
 
       {/* RESULTS COUNT */}
-      <div style={{ padding: '0.875rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
+      <div style={{ padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <p style={{ color: '#888', fontSize: '0.82rem', margin: 0 }}>
           {loadingData ? 'Searching...' : <><span style={{ color: '#f5f0e8', fontWeight: '700' }}>{filtered.length}</span> businesses found{city !== 'All Cities' && <> in <span style={{ color: '#c9933a' }}>{city}</span></>}{category && <> · <span style={{ color: '#c9933a' }}>{categories.find(c => c.value === category)?.label}</span></>}{!usingRealData && <span style={{ color: '#555' }}> · sample</span>}</>}
         </p>
         {category && <button onClick={() => setCategory('')} style={{ background: 'none', border: '1px solid #333', color: '#888', padding: '0.3rem 0.65rem', borderRadius: '1rem', cursor: 'pointer', fontSize: '0.78rem' }}>✕ Clear</button>}
@@ -355,7 +352,7 @@ function BrowseContent() {
 
       {/* GRID VIEW */}
       {view === 'grid' && (
-        <div style={{ padding: '0 1.5rem 3rem', maxWidth: '1400px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ padding: '0 1rem 3rem', maxWidth: '1400px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
           <div className="biz-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1rem' }}>
             {loadingData ? (
               Array.from({ length: 6 }).map((_, i) => (
@@ -387,9 +384,9 @@ function BrowseContent() {
                       {business.isVerified && <span style={{ backgroundColor: 'rgba(0,0,0,0.7)', color: '#4ade80', padding: '0.2rem 0.5rem', borderRadius: '1rem', fontSize: '0.65rem', fontWeight: '700' }}>✓ Verified</span>}
                     </div>
                   </div>
-                  <div style={{ padding: '1rem' }}>
+                  <div style={{ padding: '0.875rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
-                      <h3 style={{ fontWeight: '700', fontSize: '0.95rem', margin: 0, flex: 1, paddingRight: '0.5rem' }}>{business.name}</h3>
+                      <h3 style={{ fontWeight: '700', fontSize: '0.9rem', margin: 0, flex: 1, paddingRight: '0.5rem' }}>{business.name}</h3>
                       {business.rating ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0 }}>
                           <span style={{ color: '#f5c842', fontSize: '0.8rem' }}>★</span>
@@ -398,11 +395,11 @@ function BrowseContent() {
                         </div>
                       ) : <span style={{ color: '#555', fontSize: '0.75rem', flexShrink: 0 }}>New</span>}
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.875rem' }}>
-                      <span style={{ color: '#888', fontSize: '0.8rem' }}>{getCategoryEmoji(typeof business.category === 'object' ? business.category?.name : business.category)} {(typeof business.category === 'object' ? business.category?.name : business.category)?.replace(/_/g, ' ') ?? ''}</span>
-                      <span style={{ color: '#888', fontSize: '0.8rem' }}>📍 {business.city}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                      <span style={{ color: '#888', fontSize: '0.78rem' }}>{getCategoryEmoji(typeof business.category === 'object' ? business.category?.name : business.category)} {(typeof business.category === 'object' ? business.category?.name : business.category)?.replace(/_/g, ' ') ?? ''}</span>
+                      <span style={{ color: '#888', fontSize: '0.78rem' }}>📍 {business.city}</span>
                     </div>
-                    <div style={{ padding: '0.55rem 1rem', backgroundColor: '#c9933a', borderRadius: '0.625rem', textAlign: 'center', fontWeight: '700', fontSize: '0.82rem', color: '#0a0a0a' }}>View Profile</div>
+                    <div style={{ padding: '0.5rem 1rem', backgroundColor: '#c9933a', borderRadius: '0.625rem', textAlign: 'center', fontWeight: '700', fontSize: '0.82rem', color: '#0a0a0a' }}>View Profile</div>
                   </div>
                 </div>
               </Link>
@@ -414,8 +411,7 @@ function BrowseContent() {
       {/* MAP VIEW */}
       {view === 'map' && (
         <div className="map-container" style={{ display: 'flex', flex: 1, overflow: 'hidden', height: 'calc(100vh - 220px)', minHeight: '500px' }}>
-          {/* Left panel */}
-          <div className="map-list" style={{ width: '340px', flexShrink: 0, overflowY: 'auto', borderRight: '1px solid #222', backgroundColor: '#080808' }}>
+          <div className="map-list" style={{ width: '320px', flexShrink: 0, overflowY: 'auto', borderRight: '1px solid #222', backgroundColor: '#080808' }}>
             <div style={{ padding: '0.75rem' }}>
               {filtered.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#888' }}><div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔍</div><p style={{ fontSize: '0.9rem' }}>No businesses found</p></div>
@@ -443,7 +439,6 @@ function BrowseContent() {
               ))}
             </div>
           </div>
-          {/* Map */}
           <div style={{ flex: 1, position: 'relative', backgroundColor: '#111' }}>
             <GoogleMap businesses={filtered} selectedId={selectedId} onSelect={handleSelect} city={city} />
           </div>
@@ -454,16 +449,16 @@ function BrowseContent() {
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-        /* Mobile */
         @media (max-width: 768px) {
           .hide-mobile { display: none !important; }
           .desktop-filters { display: none !important; }
           .mobile-filter-btn { display: flex !important; }
-          .biz-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .biz-grid { grid-template-columns: repeat(2, 1fr) !important; min-width: 0 !important; }
           .map-container { flex-direction: column !important; height: auto !important; }
-          .map-list { width: 100% !important; max-height: 280px !important; border-right: none !important; border-bottom: 1px solid #222 !important; }
+          .map-list { width: 100% !important; max-height: 260px !important; border-right: none !important; border-bottom: 1px solid #222 !important; }
           .map-container > div:last-child { height: 50vh !important; min-height: 300px !important; }
         }
+
         @media (max-width: 480px) {
           .biz-grid { grid-template-columns: 1fr !important; }
         }
@@ -471,6 +466,7 @@ function BrowseContent() {
     </main>
   )
 }
+
 export default function BrowsePage() {
   return (
     <Suspense fallback={null}>

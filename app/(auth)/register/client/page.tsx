@@ -8,7 +8,6 @@ export default function ClientRegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [registered, setRegistered] = useState(false)
 
   const update = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }))
 
@@ -41,22 +40,22 @@ export default function ClientRegisterPage() {
   return (
     <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-      <nav style={{ borderBottom: '1px solid #222', padding: '1rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <nav style={{ borderBottom: '1px solid #222', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href="/" style={{ fontSize: '1.5rem', fontWeight: '800', color: '#c9933a', textDecoration: 'none' }}>Meda</Link>
-        <span style={{ color: '#888', fontSize: '0.9rem' }}>
+        <span style={{ color: '#888', fontSize: '0.875rem' }}>
           <span className="hide-mobile">Already have an account?{' '}</span>
           <Link href="/login" style={{ color: '#c9933a', textDecoration: 'none', fontWeight: '600' }}>Sign in</Link>
         </span>
       </nav>
 
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem 1rem' }}>
         <div style={{ width: '100%', maxWidth: '440px', animation: 'fadeInUp 0.5s ease both' }}>
 
-          <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '0.5rem' }}>Create your account</h1>
-          <p style={{ color: '#888', marginBottom: '2rem', fontSize: '0.95rem' }}>Join the Habesha community in Canada</p>
+          <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', fontWeight: '800', marginBottom: '0.5rem' }}>Create your account</h1>
+          <p style={{ color: '#888', marginBottom: '1.75rem', fontSize: '0.9rem' }}>Join the Habesha community in Canada</p>
 
           {error && (
-            <div style={{ background: '#1a0a0a', border: '1px solid #e05c5c', borderRadius: '0.75rem', padding: '0.875rem 1rem', color: '#e05c5c', fontSize: '0.9rem', marginBottom: '1.5rem' }}>{error}</div>
+            <div style={{ background: '#1a0a0a', border: '1px solid #e05c5c', borderRadius: '0.75rem', padding: '0.875rem 1rem', color: '#e05c5c', fontSize: '0.875rem', marginBottom: '1.25rem' }}>{error}</div>
           )}
 
           <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -101,13 +100,23 @@ export default function ClientRegisterPage() {
                 onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
             </div>
 
-            <button type="submit" disabled={loading} style={{ backgroundColor: loading ? '#7a5820' : '#c9933a', color: '#0a0a0a', padding: '1rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '1rem', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-              {loading ? (
-                <><span style={{ width: '16px', height: '16px', border: '2px solid #0a0a0a', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />Creating account...</>
-              ) : 'Create Account'}
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer', marginTop: '0.25rem' }}>
+              <input type="checkbox" checked={form.agreedToTerms}
+                onChange={e => setForm(prev => ({ ...prev, agreedToTerms: e.target.checked }))}
+                style={{ marginTop: '2px', accentColor: '#c9933a', width: '16px', height: '16px', flexShrink: 0, cursor: 'pointer' }} />
+              <span style={{ color: '#888', fontSize: '0.82rem', lineHeight: 1.5 }}>
+                I agree to Meda&apos;s{' '}
+                <Link href="/terms" target="_blank" style={{ color: '#c9933a', textDecoration: 'underline' }}>Terms & Conditions</Link>
+                {' '}and{' '}
+                <Link href="/privacy" target="_blank" style={{ color: '#c9933a', textDecoration: 'underline' }}>Privacy Policy</Link>
+              </span>
+            </label>
+
+            <button type="submit" disabled={loading} style={{ backgroundColor: loading ? '#7a5820' : '#c9933a', color: '#0a0a0a', padding: '1rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '1rem', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              {loading ? (<><span style={{ width: '16px', height: '16px', border: '2px solid #0a0a0a', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />Creating account...</>) : 'Create Account'}
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '0.5rem 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '0.25rem 0' }}>
               <div style={{ flex: 1, height: '1px', backgroundColor: '#222' }} />
               <span style={{ color: '#555', fontSize: '0.85rem' }}>or</span>
               <div style={{ flex: 1, height: '1px', backgroundColor: '#222' }} />
@@ -125,25 +134,12 @@ export default function ClientRegisterPage() {
               </svg>
               Continue with Google
             </button>
-
           </form>
 
-          <p style={{ textAlign: 'center', color: '#555', fontSize: '0.85rem', marginTop: '2rem' }}>
+          <p style={{ textAlign: 'center', color: '#555', fontSize: '0.85rem', marginTop: '1.75rem' }}>
             Are you a business owner?{' '}
             <Link href="/register/business" style={{ color: '#c9933a', textDecoration: 'none', fontWeight: '600' }}>Register your business</Link>
           </p>
-
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer', marginTop: '1rem' }}>
-            <input type="checkbox" checked={form.agreedToTerms}
-              onChange={e => setForm(prev => ({ ...prev, agreedToTerms: e.target.checked }))}
-              style={{ marginTop: '2px', accentColor: '#c9933a', width: '16px', height: '16px', flexShrink: 0, cursor: 'pointer' }} />
-            <span style={{ color: '#888', fontSize: '0.85rem', lineHeight: 1.5 }}>
-              I agree to Meda&apos;s{' '}
-              <Link href="/terms" target="_blank" style={{ color: '#c9933a', textDecoration: 'underline' }}>Terms & Conditions</Link>
-              {' '}and{' '}
-              <Link href="/privacy" target="_blank" style={{ color: '#c9933a', textDecoration: 'underline' }}>Privacy Policy</Link>
-            </span>
-          </label>
         </div>
       </div>
 
