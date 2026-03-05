@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 const cities = ['All Cities', 'Toronto', 'Calgary', 'Edmonton', 'Ottawa', 'Vancouver', 'Montreal']
@@ -178,8 +178,18 @@ function GoogleMap({ businesses, selectedId, onSelect, city }: { businesses: Bus
 
 function BrowseContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
+
+  const changeCategory = (val: string) => {
+    setCategory(val)
+    const params = new URLSearchParams(searchParams.toString())
+    if (val) params.set('category', val)
+    else params.delete('category')
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
   const [city, setCity] = useState('All Cities')
   const [view, setView] = useState<'grid' | 'map'>('grid')
   const [sortBy, setSortBy] = useState('featured')
@@ -193,7 +203,7 @@ function BrowseContent() {
   const cardRefs = useRef<Record<string | number, HTMLDivElement | null>>({})
 
   useEffect(() => {
-    fetch('/api/admin/categories')
+    fetch('/api/admin/categories', { cache: 'no-store' })
       .then(r => r.json())
       .then(data => {
         if (data.categories?.length) {
@@ -302,7 +312,7 @@ function BrowseContent() {
 
         {/* Desktop filters */}
         <div className="desktop-filters" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-          <select value={category} onChange={e => setCategory(e.target.value)} style={{ background: '#0a0a0a', border: '1px solid #333', borderRadius: '0.75rem', padding: '0.65rem 1rem', color: '#f5f0e8', fontSize: '0.85rem', outline: 'none' }}>
+          <select value={category} onChange={e => changeCategory(e.target.value)} style={{ background: '#0a0a0a', border: '1px solid #333', borderRadius: '0.75rem', padding: '0.65rem 1rem', color: '#f5f0e8', fontSize: '0.85rem', outline: 'none' }}>
             {categories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
           <select value={city} onChange={e => setCity(e.target.value)} style={{ background: '#0a0a0a', border: '1px solid #333', borderRadius: '0.75rem', padding: '0.65rem 1rem', color: '#f5f0e8', fontSize: '0.85rem', outline: 'none' }}>
@@ -318,7 +328,7 @@ function BrowseContent() {
         {/* Mobile filters drawer */}
         {filtersOpen && (
           <div className="mobile-filters" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.75rem', padding: '0.75rem', backgroundColor: '#0a0a0a', borderRadius: '0.75rem', border: '1px solid #222' }}>
-            <select value={category} onChange={e => setCategory(e.target.value)} style={{ background: '#111', border: '1px solid #333', borderRadius: '0.5rem', padding: '0.6rem 0.75rem', color: '#f5f0e8', fontSize: '0.85rem', outline: 'none' }}>
+            <select value={category} onChange={e => changeCategory(e.target.value)} style={{ background: '#111', border: '1px solid #333', borderRadius: '0.5rem', padding: '0.6rem 0.75rem', color: '#f5f0e8', fontSize: '0.85rem', outline: 'none' }}>
               {categories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
             <select value={city} onChange={e => setCity(e.target.value)} style={{ background: '#111', border: '1px solid #333', borderRadius: '0.5rem', padding: '0.6rem 0.75rem', color: '#f5f0e8', fontSize: '0.85rem', outline: 'none' }}>
@@ -335,7 +345,7 @@ function BrowseContent() {
         {/* Category pills */}
         <div style={{ display: 'flex', gap: '0.4rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
           {categories.map(c => (
-            <button key={c.value} onClick={() => setCategory(c.value)} style={{ padding: '0.3rem 0.75rem', borderRadius: '2rem', border: '1px solid #333', backgroundColor: category === c.value ? '#c9933a' : 'transparent', color: category === c.value ? '#0a0a0a' : '#888', cursor: 'pointer', fontSize: '0.78rem', fontWeight: '600', whiteSpace: 'nowrap', transition: 'all 0.2s', flexShrink: 0 }}>
+            <button key={c.value} onClick={() => changeCategory(c.value)} style={{ padding: '0.3rem 0.75rem', borderRadius: '2rem', border: '1px solid #333', backgroundColor: category === c.value ? '#c9933a' : 'transparent', color: category === c.value ? '#0a0a0a' : '#888', cursor: 'pointer', fontSize: '0.78rem', fontWeight: '600', whiteSpace: 'nowrap', transition: 'all 0.2s', flexShrink: 0 }}>
               {c.label}
             </button>
           ))}
@@ -347,7 +357,7 @@ function BrowseContent() {
         <p style={{ color: '#888', fontSize: '0.82rem', margin: 0 }}>
           {loadingData ? 'Searching...' : <><span style={{ color: '#f5f0e8', fontWeight: '700' }}>{filtered.length}</span> businesses found{city !== 'All Cities' && <> in <span style={{ color: '#c9933a' }}>{city}</span></>}{category && <> · <span style={{ color: '#c9933a' }}>{categories.find(c => c.value === category)?.label}</span></>}{!usingRealData && <span style={{ color: '#555' }}> · sample</span>}</>}
         </p>
-        {category && <button onClick={() => setCategory('')} style={{ background: 'none', border: '1px solid #333', color: '#888', padding: '0.3rem 0.65rem', borderRadius: '1rem', cursor: 'pointer', fontSize: '0.78rem' }}>✕ Clear</button>}
+        {category && <button onClick={() => changeCategory('')} style={{ background: 'none', border: '1px solid #333', color: '#888', padding: '0.3rem 0.65rem', borderRadius: '1rem', cursor: 'pointer', fontSize: '0.78rem' }}>✕ Clear</button>}
       </div>
 
       {/* GRID VIEW */}

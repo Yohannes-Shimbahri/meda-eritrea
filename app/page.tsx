@@ -44,7 +44,7 @@ export default function HomePage() {
   const [categories, setCategories] = useState<{ name: string; slug: string; image: string }[]>([])
 
   useEffect(() => {
-    fetch('/api/admin/categories')
+    fetch('/api/admin/categories', { cache: 'no-store' })
       .then(r => r.json())
       .then(data => {
         if (data.categories) {
@@ -139,7 +139,7 @@ export default function HomePage() {
         <div style={{ maxWidth: '900px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.25rem', textAlign: 'center' }} className="stats-grid">
           {[
             { number: 'Verified', label: 'Business Listings' },
-            { number: '9', label: 'Business Categories' },
+            { number: String(categories.length || 0), label: 'Business Categories' },
             { number: '6', label: 'Cities Expanding Soon' },
             { number: 'Join Us', label: 'Be Among the First' },
           ].map(stat => (

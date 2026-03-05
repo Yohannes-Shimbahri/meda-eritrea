@@ -26,6 +26,7 @@ export default function AdminCategoriesPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [imageBase64, setImageBase64] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const dragItem = useRef<number | null>(null)
 
   const [form, setForm] = useState({ name: '', icon: '🏢', description: '', order: '0' })
 
@@ -41,7 +42,7 @@ export default function AdminCategoriesPage() {
     const headers = await getHeaders()
     const res = await fetch('/api/admin/categories', { headers })
     const data = await res.json()
-    if (data.categories) setCategories(data.categories)
+    if (data.categories) setCategories([...data.categories].sort((a: Category, b: Category) => a.order - b.order))
     setLoading(false)
   }
 
@@ -125,6 +126,37 @@ export default function AdminCategoriesPage() {
     else showMsg(data.error || 'Cannot delete')
   }
 
+  // ── Drag & Drop reorder ─────────────────────────────────
+  const handleDragStart = (index: number) => {
+    dragItem.current = index
+  }
+
+  const handleDragEnter = (index: number) => {
+    if (dragItem.current === null || dragItem.current === index) return
+    const updated = [...categories]
+    const dragged = updated.splice(dragItem.current, 1)[0]
+    updated.splice(index, 0, dragged)
+    dragItem.current = index
+    setCategories(updated.map((cat, i) => ({ ...cat, order: i })))
+  }
+
+  const handleDragEnd = async () => {
+    dragItem.current = null
+    // Persist all new order values to DB
+    const headers = await getHeaders()
+    await Promise.all(
+      categories.map((cat, idx) =>
+        fetch('/api/admin/categories', {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({ id: cat.id, order: idx }),
+        })
+      )
+    )
+    showMsg('✓ Order saved — home page updated')
+  }
+  // ────────────────────────────────────────────────────────
+
   const s = {
     page: { backgroundColor: '#0a0a0a', minHeight: '100vh', color: '#f5f0e8', padding: '2rem', fontFamily: 'system-ui, sans-serif' },
     card: { backgroundColor: '#111', border: '1px solid #222', borderRadius: '1rem', padding: '1.5rem', marginBottom: '1.5rem' },
@@ -141,7 +173,7 @@ export default function AdminCategoriesPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <div>
             <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.25rem' }}>Categories</h1>
-            <p style={{ color: '#888', fontSize: '0.9rem' }}>{categories.length} categories · manage what service types appear on Meda</p>
+            <p style={{ color: '#888', fontSize: '0.9rem' }}>{categories.length} categories · drag to reorder</p>
           </div>
           <button onClick={() => { resetForm(); setShowForm(true) }} style={s.btn()}>+ New Category</button>
         </div>
@@ -185,11 +217,8 @@ export default function AdminCategoriesPage() {
             <div style={{ marginBottom: '1.25rem' }}>
               <label style={s.label}>Category Image (optional — shown on browse page)</label>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                {/* Preview */}
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  style={{ width: '100px', height: '100px', borderRadius: '0.875rem', border: `2px dashed ${imagePreview ? '#c9933a' : '#333'}`, overflow: 'hidden', cursor: 'pointer', flexShrink: 0, backgroundColor: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
-                >
+                <div onClick={() => fileInputRef.current?.click()}
+                  style={{ width: '100px', height: '100px', borderRadius: '0.875rem', border: `2px dashed ${imagePreview ? '#c9933a' : '#333'}`, overflow: 'hidden', cursor: 'pointer', flexShrink: 0, backgroundColor: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                   {imagePreview ? (
                     <img src={imagePreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
@@ -220,7 +249,7 @@ export default function AdminCategoriesPage() {
               </div>
             </div>
 
-            {/* Emoji Icon (fallback) */}
+            {/* Emoji Icon */}
             <div style={{ marginBottom: '1.25rem' }}>
               <label style={s.label}>Emoji Icon (fallback if no image) — selected: <span style={{ fontSize: '1.2rem' }}>{form.icon}</span></label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
@@ -252,8 +281,34 @@ export default function AdminCategoriesPage() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {[...categories].sort((a, b) => a.order - b.order).map(cat => (
-              <div key={cat.id} style={{ backgroundColor: '#111', border: `1px solid ${cat.isActive ? '#222' : '#1a1200'}`, borderRadius: '1rem', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', opacity: cat.isActive ? 1 : 0.6 }}>
+            <p style={{ color: '#555', fontSize: '0.78rem', margin: '0 0 0.5rem' }}>
+              ⠿ Drag to reorder — order is saved automatically and reflected on the home page
+            </p>
+            {categories.map((cat, index) => (
+              <div
+                key={cat.id}
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragEnter={() => handleDragEnter(index)}
+                onDragEnd={handleDragEnd}
+                onDragOver={e => e.preventDefault()}
+                style={{
+                  backgroundColor: '#111',
+                  border: `1px solid ${cat.isActive ? '#333' : '#1a1200'}`,
+                  borderRadius: '1rem', padding: '1.25rem',
+                  display: 'flex', alignItems: 'center', gap: '1rem',
+                  opacity: cat.isActive ? 1 : 0.6,
+                  cursor: 'grab', userSelect: 'none',
+                  transition: 'border-color 0.15s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = '#c9933a55')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = cat.isActive ? '#333' : '#1a1200')}
+              >
+                {/* Drag handle + position number */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', flexShrink: 0 }}>
+                  <span style={{ color: '#555', fontSize: '1.1rem', lineHeight: 1 }}>⠿</span>
+                  <span style={{ color: '#c9933a', fontSize: '0.65rem', fontWeight: '800', backgroundColor: '#1a1200', padding: '0.1rem 0.35rem', borderRadius: '0.3rem' }}>#{index + 1}</span>
+                </div>
 
                 {/* Image or icon */}
                 <div style={{ width: '56px', height: '56px', borderRadius: '0.75rem', overflow: 'hidden', backgroundColor: '#0a0a0a', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -271,7 +326,7 @@ export default function AdminCategoriesPage() {
                     {cat.imageUrl && <span style={{ fontSize: '0.7rem', backgroundColor: '#0a1f0a', color: '#4ade80', padding: '0.1rem 0.5rem', borderRadius: '1rem', fontWeight: '700' }}>📷 Photo</span>}
                   </div>
                   <div style={{ fontSize: '0.8rem', color: '#555' }}>
-                    /{cat.slug} · {cat._count?.businesses ?? 0} businesses · order {cat.order}
+                    /{cat.slug} · {cat._count?.businesses ?? 0} businesses
                   </div>
                   {cat.description && <div style={{ fontSize: '0.8rem', color: '#888', marginTop: '0.25rem' }}>{cat.description}</div>}
                 </div>
