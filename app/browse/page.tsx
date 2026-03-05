@@ -373,10 +373,10 @@ function BrowseContent() {
               </div>
             ) : filtered.map((business, i) => (
               <Link key={business.id} href={`/business/${business.slug}`} style={{ textDecoration: 'none', color: '#f5f0e8', animation: `fadeInUp 0.4s ease ${i * 0.05}s both` }}>
-                <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1.25rem', overflow: 'hidden', transition: 'all 0.3s', cursor: 'pointer', height: '100%' }}
+                <div className='biz-card' style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1.25rem', overflow: 'hidden', transition: 'all 0.3s', cursor: 'pointer', height: '100%' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = '#c9933a'; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(201,147,58,0.15)' }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = '#222'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
-                  <div style={{ height: '160px', position: 'relative', overflow: 'hidden', backgroundColor: '#222' }}>
+                  <div style={{ height: 'clamp(95px, 18vw, 160px)', position: 'relative', overflow: 'hidden', backgroundColor: '#222' }}>
                     {business.coverImage ? <Image src={business.coverImage} alt={business.name} fill style={{ objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>{getCategoryEmoji(business.category)}</div>}
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)' }} />
                     <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', display: 'flex', gap: '0.4rem' }}>
@@ -453,14 +453,16 @@ function BrowseContent() {
           .hide-mobile { display: none !important; }
           .desktop-filters { display: none !important; }
           .mobile-filter-btn { display: flex !important; }
-          .biz-grid { grid-template-columns: repeat(2, 1fr) !important; min-width: 0 !important; }
+          .biz-grid { grid-template-columns: repeat(2, 1fr) !important; min-width: 0 !important; gap: 0.5rem !important; }
+          .biz-card img, .biz-card > div:first-child { height: 95px !important; }
+          
           .map-container { flex-direction: column !important; height: auto !important; }
           .map-list { width: 100% !important; max-height: 260px !important; border-right: none !important; border-bottom: 1px solid #222 !important; }
           .map-container > div:last-child { height: 50vh !important; min-height: 300px !important; }
         }
 
         @media (max-width: 480px) {
-          .biz-grid { grid-template-columns: 1fr !important; }
+          .biz-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
       `}</style>
     </main>
