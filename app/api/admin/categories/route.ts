@@ -51,7 +51,12 @@ export async function GET() {
         },
       },
     })
-    return NextResponse.json({ categories })
+    return NextResponse.json({ categories }, {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      'CDN-Cache-Control': 'no-store',
+    }
+  })
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 })
