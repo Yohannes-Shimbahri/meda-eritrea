@@ -70,7 +70,7 @@ function CategoryBrowseContent() {
   // Load category info
   useEffect(() => {
     if (!categorySlug) return
-    fetch('/api/admin/categories')
+    fetch(`/api/admin/categories?t=${Date.now()}`, { cache: 'no-store' })
       .then(r => r.json())
       .then(data => {
         const found = data.categories?.find((c: Category) => c.slug === categorySlug)

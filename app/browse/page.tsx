@@ -203,8 +203,7 @@ function BrowseContent() {
   const cardRefs = useRef<Record<string | number, HTMLDivElement | null>>({})
 
   useEffect(() => {
-    fetch('/api/admin/categories', { cache: 'no-store' })
-      .then(r => r.json())
+    fetch(`/api/admin/categories?t=${Date.now()}`, { cache: 'no-store' })      .then(r => r.json())
       .then(data => {
         if (data.categories?.length) {
           setCategories([
