@@ -46,8 +46,14 @@ model Category {
   order       Int        @default(0)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+  parentId    String?    @db.Text
+  parent      Category?  @relation("subcategories", fields: [parentId], references: [id])
+  subcategories Category[] @relation("subcategories")
 
-  businesses  Business[]
+  businesses      Business[]
+  bizAsSubcat     Business[]             @relation("businessSubcategory")
+  businessLinks   BusinessCategory[]     @relation("BusinessCategoryLink")
+  subLinks        BusinessCategory[]     @relation("BusinessSubcategoryLink")
 }
 
 // ─── USERS ───────────────────────────────────────────────
@@ -104,6 +110,8 @@ model Business {
   website          String?
   instagram        String?
   facebook         String?
+  contactType  String  @default("BOOKING")
+  whatsapp     String?
   subscription     SubscriptionTier @default(FREE)
   subscriptionStart DateTime?
   subscriptionEnd   DateTime?
@@ -112,6 +120,9 @@ model Business {
   stripeCustomerId String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+  subcategoryId String?             @db.Text
+  subcategory   Category?           @relation("businessSubcategory", fields: [subcategoryId], references: [id])
+  
 
   employees     Employee[]
   media         BusinessMedia[]
@@ -124,6 +135,7 @@ model Business {
   carListings   CarListing[]
   notifications Notification[]
   profileViews  ProfileView[]
+  businessCategories BusinessCategory[]
 }
 
 model Employee {
@@ -301,4 +313,18 @@ model ProfileView {
 
   @@index([businessId])
   @@index([viewedAt])
+}
+
+model BusinessCategory {
+  id            String    @id @default(cuid())
+  businessId    String
+  business      Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  categoryId    String
+  category      Category  @relation("BusinessCategoryLink", fields: [categoryId], references: [id])
+  subcategoryId String?
+  subcategory   Category? @relation("BusinessSubcategoryLink", fields: [subcategoryId], references: [id])
+  isPrimary     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+
+  @@unique([businessId, categoryId, subcategoryId])
 }

@@ -36,12 +36,20 @@ async function uploadImage(base64: string, slug: string): Promise<string> {
 }
 
 // GET — public
+// Returns parent categories with their subcategories nested
 export async function GET() {
   try {
     const categories = await (prisma as any).category.findMany({
-      where: { isActive: true },
+      where: { isActive: true, parentId: null }, // top-level only
       orderBy: [{ order: 'asc' }, { name: 'asc' }],
-      include: { _count: { select: { businesses: true } } },
+      include: {
+        _count: { select: { businesses: true } },
+        subcategories: {
+          where: { isActive: true },
+          orderBy: [{ order: 'asc' }, { name: 'asc' }],
+          include: { _count: { select: { businesses: true } } },
+        },
+      },
     })
     return NextResponse.json({ categories })
   } catch (err) {
@@ -50,7 +58,7 @@ export async function GET() {
   }
 }
 
-// POST — admin only, create
+// POST — admin only, create category or subcategory
 export async function POST(req: NextRequest) {
   try {
     const email = getEmailFromToken(req)
@@ -58,7 +66,7 @@ export async function POST(req: NextRequest) {
     const admin = await (prisma as any).user.findUnique({ where: { email } })
     if (admin?.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const { name, icon, description, order, imageBase64 } = await req.json()
+    const { name, icon, description, order, imageBase64, parentId } = await req.json()
     if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
 
     const slug = slugify(name)
@@ -69,7 +77,15 @@ export async function POST(req: NextRequest) {
     }
 
     const category = await (prisma as any).category.create({
-      data: { name, slug, icon: icon || '🏢', description: description || null, order: order ?? 0, imageUrl: imageUrl ?? null },
+      data: {
+        name,
+        slug,
+        icon: icon || '🏢',
+        description: description || null,
+        order: order ?? 0,
+        imageUrl: imageUrl ?? null,
+        parentId: parentId || null, // null = top-level, string = subcategory
+      },
     })
     return NextResponse.json({ success: true, category })
   } catch (err: any) {
@@ -87,7 +103,7 @@ export async function PATCH(req: NextRequest) {
     const admin = await (prisma as any).user.findUnique({ where: { email } })
     if (admin?.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const { id, name, icon, description, order, isActive, imageBase64 } = await req.json()
+    const { id, name, icon, description, order, isActive, imageBase64, parentId } = await req.json()
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
     const data: any = {}
@@ -96,6 +112,7 @@ export async function PATCH(req: NextRequest) {
     if (description !== undefined) data.description = description
     if (order !== undefined) data.order = order
     if (isActive !== undefined) data.isActive = isActive
+    if (parentId !== undefined) data.parentId = parentId || null
 
     if (imageBase64?.startsWith('data:')) {
       const slug = data.slug || (await (prisma as any).category.findUnique({ where: { id } }))?.slug || id
@@ -121,9 +138,13 @@ export async function DELETE(req: NextRequest) {
     const { id } = await req.json()
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
-    const count = await (prisma as any).business.count({ where: { categoryId: id } })
-    if (count > 0) return NextResponse.json({ error: `Cannot delete — ${count} business(es) use this category` }, { status: 400 })
+    // Check businesses using this category or subcategory
+    const bizCount = await (prisma as any).business.count({ where: { categoryId: id } })
+    const subBizCount = await (prisma as any).business.count({ where: { subcategoryId: id } })
+    if (bizCount + subBizCount > 0) return NextResponse.json({ error: `Cannot delete — ${bizCount + subBizCount} business(es) use this category` }, { status: 400 })
 
+    // Delete subcategories first if this is a parent
+    await (prisma as any).category.deleteMany({ where: { parentId: id } })
     await (prisma as any).category.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (err) {

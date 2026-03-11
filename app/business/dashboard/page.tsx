@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { CategoriesTab } from '@/components/categories-tab'
 
-type Tab = 'overview' | 'bookings' | 'portfolio' | 'profile' | 'gallery' | 'employees' | 'services' | 'hours' | 'settings' | 'analytics'
+type Tab = 'overview' | 'bookings' | 'portfolio' | 'profile' | 'gallery' | 'employees' | 'services' | 'hours' | 'settings' | 'analytics' | 'categories'
 
 const navItems: { id: Tab; icon: string; label: string }[] = [
   { id: 'overview', icon: '📊', label: 'Overview' },
@@ -16,6 +17,7 @@ const navItems: { id: Tab; icon: string; label: string }[] = [
   { id: 'hours', icon: '🕐', label: 'Hours' },
   { id: 'analytics', icon: '📈', label: 'Analytics' },
   { id: 'settings', icon: '⚙️', label: 'Settings' },
+  { id: 'categories', icon: '🗂️', label: 'Categories' },
 ]
 
 const PLAN_LIMITS: Record<string, number> = { FREE: 5, STANDARD: 20, PRO: Infinity }
@@ -474,10 +476,23 @@ export default function BusinessDashboard() {
   const [saveMsg, setSaveMsg] = useState('')
   const [bookingStats, setBookingStats] = useState({ today: 0, total: 0, pending: 0 })
   const [currentPlan, setCurrentPlan] = useState('FREE')
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const [dashServices, setDashServices] = useState<{ id: number; name: string; price: string; duration: string; photo: string | null }[]>([])
   const [dashEmployees, setDashEmployees] = useState<{ id: number; name: string; specialty: string; bio: string; photo: string | null }[]>([])
-  const [dashProfile, setDashProfile] = useState<{ name: string; phone: string; address: string; instagram: string; facebook: string; website: string; bio: string; coverPhoto: string | null; logo: string | null }>({ name: '', phone: '', address: '', instagram: '', facebook: '', website: '', bio: '', coverPhoto: null, logo: null })
+
+  // ── UPDATED: added contactType and whatsapp ──
+  const [dashProfile, setDashProfile] = useState<{
+    name: string; phone: string; whatsapp: string; address: string;
+    instagram: string; facebook: string; website: string; bio: string;
+    contactType: string; coverPhoto: string | null; logo: string | null
+  }>({
+    name: '', phone: '', whatsapp: '', address: '', instagram: '',
+    facebook: '', website: '', bio: '', contactType: 'BOOKING',
+    coverPhoto: null, logo: null
+  })
+
   const [dashHours, setDashHours] = useState([
     { day: 'Monday', open: '09:00', close: '18:00', closed: false },
     { day: 'Tuesday', open: '09:00', close: '18:00', closed: false },
@@ -507,10 +522,23 @@ export default function BusinessDashboard() {
       fetch('/api/business/services', { headers }).then(r => r.json()).then(data => { if (data.services?.length > 0) setDashServices(data.services.map((s: any) => ({ id: s.id, name: s.name, price: String(s.price), duration: String(s.duration), photo: null }))) }).catch(() => {})
       fetch('/api/business/hours', { headers }).then(r => r.json()).then(data => { if (data.hours?.length > 0) { const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']; setDashHours(data.hours.map((h: any) => ({ day: days[h.dayOfWeek], open: h.openTime || '09:00', close: h.closeTime || '18:00', closed: h.isClosed }))) } }).catch(() => {})
       fetch('/api/business/employees', { headers }).then(r => r.json()).then(data => { if (data.employees?.length > 0) setDashEmployees(data.employees.map((e: any) => ({ id: e.id, name: e.name, specialty: e.specialty || '', bio: e.bio || '', photo: e.avatarUrl || null }))) }).catch(() => {})
+      // ── UPDATED: load contactType and whatsapp ──
       fetch('/api/business/profile', { headers }).then(r => r.json()).then(data => {
         if (data.business) {
           setCurrentPlan(data.business.subscription || 'FREE')
-          setDashProfile({ name: data.business.name || '', phone: data.business.phone || '', address: data.business.address || '', instagram: data.business.instagram || '', facebook: data.business.facebook || '', website: data.business.website || '', bio: data.business.description || '', coverPhoto: data.business.media?.find((m: any) => m.caption === 'cover')?.url || null, logo: data.business.media?.find((m: any) => m.caption === 'logo')?.url || null })
+          setDashProfile({
+            name: data.business.name || '',
+            phone: data.business.phone || '',
+            whatsapp: data.business.whatsapp || '',
+            address: data.business.address || '',
+            instagram: data.business.instagram || '',
+            facebook: data.business.facebook || '',
+            website: data.business.website || '',
+            bio: data.business.description || '',
+            contactType: data.business.contactType || 'BOOKING',
+            coverPhoto: data.business.media?.find((m: any) => m.caption === 'cover')?.url || null,
+            logo: data.business.media?.find((m: any) => m.caption === 'logo')?.url || null,
+          })
         }
       }).catch(() => {})
       fetch('/api/business/bookings', { headers }).then(r => r.json()).then(data => {
@@ -527,7 +555,22 @@ export default function BusinessDashboard() {
   const saveServices = async () => { setSaving(true); try { const headers = await getAuthHeaders(); const res = await fetch('/api/business/services', { method: 'POST', headers, body: JSON.stringify({ services: dashServices }) }); const data = await res.json(); showSaveMsg(data.success ? '✓ Services saved!' : 'Failed') } catch { showSaveMsg('Error') } finally { setSaving(false) } }
   const saveHours = async () => { setSaving(true); try { const headers = await getAuthHeaders(); const res = await fetch('/api/business/hours', { method: 'POST', headers, body: JSON.stringify({ hours: dashHours }) }); const data = await res.json(); showSaveMsg(data.success ? '✓ Hours saved!' : 'Failed') } catch { showSaveMsg('Error') } finally { setSaving(false) } }
   const saveEmployees = async () => { setSaving(true); try { const headers = await getAuthHeaders(); const res = await fetch('/api/business/employees', { method: 'POST', headers, body: JSON.stringify({ employees: dashEmployees }) }); const data = await res.json(); showSaveMsg(data.success ? '✓ Employees saved!' : 'Failed') } catch { showSaveMsg('Error') } finally { setSaving(false) } }
-  const saveProfile = async () => { setSaving(true); try { const headers = await getAuthHeaders(); const res = await fetch('/api/business/profile', { method: 'POST', headers, body: JSON.stringify(dashProfile) }); const data = await res.json(); showSaveMsg(data.success ? '✓ Profile saved!' : 'Failed') } catch { showSaveMsg('Error') } finally { setSaving(false) } }
+
+  // ── UPDATED: saveProfile now sends contactType and whatsapp ──
+  const saveProfile = async () => {
+    setSaving(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { showSaveMsg('Session expired — please refresh'); return }
+      const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` }
+      const res = await fetch('/api/business/profile', { method: 'POST', headers, body: JSON.stringify(dashProfile) })
+      const data = await res.json()
+      showSaveMsg(data.success ? '✓ Profile saved!' : data.error || 'Failed')
+    } catch (e) {
+      console.error('saveProfile error:', e)
+      showSaveMsg('Error')
+    } finally { setSaving(false) }
+  }
 
   const handleUpgrade = async (plan: string) => {
     const headers = await getAuthHeaders()
@@ -543,10 +586,26 @@ export default function BusinessDashboard() {
     if (data.url) window.location.href = data.url
   }
 
+  const handleDeleteBusiness = async () => {
+    if (!deleteConfirm) { setDeleteConfirm(true); return }
+    setDeleting(true)
+    try {
+      const headers = await getAuthHeaders()
+      const res = await fetch('/api/business/delete', { method: 'DELETE', headers })
+      const data = await res.json()
+      if (data.success) {
+        await supabase.auth.signOut()
+        window.location.href = '/'
+      } else {
+        alert(data.error || 'Failed to delete')
+      }
+    } catch { alert('Error deleting business') }
+    finally { setDeleting(false) }
+  }
+
   const businessName = dashProfile.name || user?.user_metadata?.business_name || 'My Business'
   const ownerName = user?.user_metadata?.full_name || user?.email || 'Owner'
   const completionPct = [dashProfile.phone, dashProfile.bio, dashProfile.address, dashServices.length > 0, dashHours.some(h => !h.closed)].filter(Boolean).length * 20
-
   const empLimit = EMPLOYEE_LIMITS[currentPlan] ?? 1
   const atEmpLimit = dashEmployees.length >= empLimit
 
@@ -556,7 +615,6 @@ export default function BusinessDashboard() {
   const navStyle = (active: boolean) => ({ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderRadius: '0.75rem', cursor: 'pointer', transition: 'all 0.2s', backgroundColor: active ? '#c9933a' : 'transparent', color: active ? '#0a0a0a' : '#888', fontWeight: active ? '700' : '500' as const, fontSize: '0.9rem', border: 'none', width: '100%', textAlign: 'left' as const })
   const Spinner = () => <span style={{ width: '16px', height: '16px', border: '2px solid #0a0a0a', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
 
-  // Bottom nav items for mobile (most important tabs only)
   const mobileNavItems: { id: Tab; icon: string; label: string }[] = [
     { id: 'overview', icon: '📊', label: 'Overview' },
     { id: 'bookings', icon: '📅', label: 'Bookings' },
@@ -587,7 +645,7 @@ export default function BusinessDashboard() {
       </nav>
 
       <div style={{ display: 'flex', flex: 1 }}>
-        {/* SIDEBAR — hidden on mobile */}
+        {/* SIDEBAR */}
         <aside className="dash-sidebar" style={{ width: sidebarOpen ? '220px' : '64px', borderRight: '1px solid #222', padding: '1.25rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', transition: 'width 0.3s ease', flexShrink: 0, overflow: 'hidden', position: 'sticky', top: '57px', height: 'calc(100vh - 57px)' }}>
           <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: '1rem', padding: '0.5rem', marginBottom: '0.5rem', textAlign: 'right' as const }} onMouseEnter={e => (e.currentTarget.style.color = '#c9933a')} onMouseLeave={e => (e.currentTarget.style.color = '#555')}>{sidebarOpen ? '◀' : '▶'}</button>
           {navItems.map(item => (
@@ -672,6 +730,7 @@ export default function BusinessDashboard() {
           {activeTab === 'portfolio' && <PortfolioTab getAuthHeaders={getAuthHeaders} plan={currentPlan} />}
           {activeTab === 'gallery' && <GalleryTab getAuthHeaders={getAuthHeaders} plan={currentPlan} saveButtonStyle={saveButtonStyle} />}
           {activeTab === 'analytics' && <AnalyticsTab getAuthHeaders={getAuthHeaders} plan={currentPlan} userId={user?.id || null} onUpgrade={() => setActiveTab('settings')} />}
+          {activeTab === 'categories' && <CategoriesTab getAuthHeaders={getAuthHeaders} plan={currentPlan} onUpgrade={() => setActiveTab('settings')} />}
 
           {/* PROFILE */}
           {activeTab === 'profile' && (
@@ -681,6 +740,8 @@ export default function BusinessDashboard() {
                 <button onClick={saveProfile} style={saveButtonStyle()}>{saving ? <><Spinner />Saving...</> : saveMsg || 'Save Profile'}</button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+                {/* Cover & Logo */}
                 <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1rem', padding: '1.5rem' }}>
                   <h3 style={{ fontWeight: '700', marginBottom: '1.25rem', fontSize: '0.95rem' }}>Cover Photo & Logo</h3>
                   <div style={{ marginBottom: '1.5rem' }}>
@@ -698,6 +759,8 @@ export default function BusinessDashboard() {
                     </div>
                   </div>
                 </div>
+
+                {/* Business Info */}
                 <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1rem', padding: '1.5rem' }}>
                   <h3 style={{ fontWeight: '700', marginBottom: '1rem', fontSize: '0.95rem' }}>Business Info</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -707,6 +770,36 @@ export default function BusinessDashboard() {
                     <div><label style={labelStyle}>Bio</label><textarea value={dashProfile.bio} onChange={e => setDashProfile(p => ({ ...p, bio: e.target.value }))} rows={4} placeholder="Tell clients about your business..." style={{ ...inputStyle, resize: 'vertical' as const }} onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')} onBlur={e => (e.currentTarget.style.borderColor = '#333')} /></div>
                   </div>
                 </div>
+
+                {/* ── NEW: Contact Preference card ── */}
+                <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1rem', padding: '1.5rem' }}>
+                  <h3 style={{ fontWeight: '700', marginBottom: '0.4rem', fontSize: '0.95rem' }}>Contact Preference</h3>
+                  <p style={{ color: '#888', fontSize: '0.82rem', marginBottom: '1.25rem' }}>How do you want customers to reach you?</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                    {[
+                      { value: 'BOOKING', icon: '📅', label: 'Appointments', desc: 'Online booking system' },
+                      { value: 'CALL', icon: '📞', label: 'Phone / Call', desc: 'Customers call directly' },
+                      { value: 'MESSAGE', icon: '💬', label: 'WhatsApp', desc: 'Customers message you' },
+                      { value: 'BOTH', icon: '🔀', label: 'Book + Contact', desc: 'Booking & direct contact' },
+                    ].map(opt => (
+                      <div key={opt.value} onClick={() => setDashProfile(p => ({ ...p, contactType: opt.value }))}
+                        style={{ backgroundColor: dashProfile.contactType === opt.value ? '#1a1200' : '#0a0a0a', border: `2px solid ${dashProfile.contactType === opt.value ? '#c9933a' : '#333'}`, borderRadius: '0.875rem', padding: '1rem', cursor: 'pointer', transition: 'all 0.2s' }}>
+                        <div style={{ fontSize: '1.5rem', marginBottom: '0.4rem' }}>{opt.icon}</div>
+                        <div style={{ fontWeight: '700', fontSize: '0.85rem', marginBottom: '0.2rem' }}>{opt.label}</div>
+                        <div style={{ color: '#888', fontSize: '0.75rem' }}>{opt.desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {(dashProfile.contactType === 'MESSAGE' || dashProfile.contactType === 'BOTH') && (
+                    <div>
+                      <label style={labelStyle}>WhatsApp Number</label>
+                      <input type="text" value={dashProfile.whatsapp} onChange={e => setDashProfile(p => ({ ...p, whatsapp: e.target.value }))} placeholder="+1 (416) 000-0000" style={inputStyle} onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')} onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
+                      <p style={{ color: '#555', fontSize: '0.75rem', marginTop: '0.4rem' }}>Leave blank to use your phone number for WhatsApp</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Social & Contact */}
                 <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1rem', padding: '1.5rem' }}>
                   <h3 style={{ fontWeight: '700', marginBottom: '1rem', fontSize: '0.95rem' }}>Social & Contact</h3>
                   <div className="social-grid" style={{ display: 'grid', gap: '1rem' }}>
@@ -819,19 +912,16 @@ export default function BusinessDashboard() {
             <div style={{ animation: 'fadeInUp 0.4s ease both' }}>
               <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.4rem' }}>Settings</h1>
               <p style={{ color: '#888', marginBottom: '2rem', fontSize: '0.9rem' }}>Manage your subscription and account</p>
-
-              {/* Mobile sign out + preview (only visible on mobile) */}
               <div className="mobile-only" style={{ display: 'none', gap: '0.75rem', marginBottom: '1.5rem' }}>
                 <Link href="/business/preview" style={{ flex: 1, border: '1px solid #333', color: '#888', padding: '0.75rem', borderRadius: '0.75rem', textDecoration: 'none', textAlign: 'center', fontSize: '0.9rem', display: 'block' }}>👁 Preview Profile</Link>
                 <button onClick={async () => { await supabase.auth.signOut(); window.location.href = '/' }} style={{ flex: 1, background: 'none', border: '1px solid #333', color: '#888', padding: '0.75rem', borderRadius: '0.75rem', cursor: 'pointer', fontSize: '0.9rem' }}>Sign Out</button>
               </div>
-
               <h2 style={{ fontSize: '1rem', fontWeight: '700', color: '#888', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Subscription Plans</h2>
               <div className="plans-grid" style={{ display: 'grid', gap: '1rem', marginBottom: '2rem' }}>
                 {[
-                  { name: 'FREE', label: 'Free', price: '$0', period: 'forever', features: ['5 portfolio photos', '5 gallery photos', '1 employee', 'Basic profile', 'Contact info'], color: '#888' },
-                  { name: 'STANDARD', label: 'Standard', price: '$19', period: 'per month', features: ['20 portfolio photos', '10 gallery photos', 'Up to 3 employees', 'Basic analytics', 'Booking system'], color: '#60a5fa' },
-                  { name: 'PRO', label: 'Pro', price: '$39', period: 'per month', features: ['Unlimited portfolio photos', 'Unlimited gallery photos', 'Unlimited employees', 'Advanced analytics', 'Verified badge ✓'], color: '#c9933a' },
+                  { name: 'FREE', label: 'Free', price: '$0', period: 'forever', features: ['1 category + 1 subcategory', '5 portfolio photos', '5 gallery photos', '1 employee', 'Basic profile', 'Contact info'], color: '#888' },
+                  { name: 'STANDARD', label: 'Standard', price: '$19', period: 'per month', features: ['3 categories + 3 subcategories', '20 portfolio photos', '10 gallery photos', 'Up to 3 employees', 'Basic analytics', 'Booking system'], color: '#60a5fa' },
+                  { name: 'PRO', label: 'Pro', price: '$39', period: 'per month', features: ['Unlimited categories & subcategories', 'Unlimited portfolio photos', 'Unlimited gallery photos', 'Unlimited employees', 'Advanced analytics', 'Verified badge ✓'], color: '#c9933a' },
                 ].map(plan => (
                   <div key={plan.name} style={{ backgroundColor: '#111', border: `2px solid ${currentPlan === plan.name ? plan.color : '#222'}`, borderRadius: '1rem', padding: '1.5rem', position: 'relative' as const }}>
                     {currentPlan === plan.name && <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', backgroundColor: plan.color, color: '#0a0a0a', padding: '0.2rem 0.75rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: '700', whiteSpace: 'nowrap' }}>Current Plan</div>}
@@ -853,8 +943,28 @@ export default function BusinessDashboard() {
                 <h3 style={{ fontWeight: '700', color: '#e05c5c', marginBottom: '1rem' }}>Danger Zone</h3>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                   <div><p style={{ fontWeight: '600', marginBottom: '0.25rem', fontSize: '0.9rem' }}>Delete Business Account</p><p style={{ color: '#888', fontSize: '0.85rem' }}>Permanently removes your business from Meda</p></div>
-                  <button style={{ backgroundColor: 'transparent', border: '1px solid #e05c5c', color: '#e05c5c', padding: '0.5rem 1rem', borderRadius: '0.75rem', cursor: 'pointer', fontSize: '0.85rem' }}>Delete</button>
-                </div>
+                  <button
+                    onClick={handleDeleteBusiness}
+                    style={{
+                      backgroundColor: deleteConfirm ? '#e05c5c' : 'transparent',
+                      border: '1px solid #e05c5c',
+                      color: deleteConfirm ? '#fff' : '#e05c5c',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '0.75rem',
+                      cursor: deleting ? 'not-allowed' : 'pointer',
+                      fontSize: '0.85rem',
+                      fontWeight: '700'
+                    }}
+                  >
+                    {deleting ? 'Deleting...' : deleteConfirm ? 'Yes, delete everything' : 'Delete'}
+                  </button>
+                  {deleteConfirm && (
+                    <button onClick={() => setDeleteConfirm(false)}
+                      style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '0.85rem', marginLeft: '0.5rem' }}>
+                      Cancel
+                    </button>
+                  )}               
+               </div>
               </div>
             </div>
           )}
@@ -879,8 +989,6 @@ export default function BusinessDashboard() {
       <style>{`
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Default desktop grid values */
         .stats-grid-4 { grid-template-columns: repeat(4, 1fr); }
         .quick-actions-grid { grid-template-columns: repeat(3, 1fr); }
         .two-col-grid { grid-template-columns: 1fr 1fr; }
@@ -890,18 +998,12 @@ export default function BusinessDashboard() {
         .analytics-pro-row { grid-template-columns: 1fr 2fr; }
         .employee-card-grid { grid-template-columns: 100px 1fr; }
         .hours-row { grid-template-columns: 120px 1fr 1fr 80px; }
-
         @media (max-width: 768px) {
-          /* Hide desktop sidebar, show mobile bottom nav */
           .dash-sidebar { display: none !important; }
           .mobile-bottom-nav { display: flex !important; }
           .mobile-only { display: flex !important; }
           .hide-mobile { display: none !important; }
-
-          /* Main content padding for bottom nav */
           .dash-main { padding: 1rem !important; padding-bottom: 5rem !important; }
-
-          /* Grids go 2-col */
           .stats-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
           .quick-actions-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .two-col-grid { grid-template-columns: 1fr !important; }
@@ -914,7 +1016,6 @@ export default function BusinessDashboard() {
           .hours-row span:first-child { grid-column: 1 / -1; }
           .hours-row button:last-child { grid-column: 1 / -1; }
         }
-
         @media (max-width: 480px) {
           .stats-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
           .quick-actions-grid { grid-template-columns: repeat(2, 1fr) !important; }

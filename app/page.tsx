@@ -12,8 +12,9 @@ function CategoryCard({ cat, i, hoveredCat, setHoveredCat }: {
   setHoveredCat: (slug: string | null) => void
 }) {
   return (
+    // ✅ Now links to /browse/[category] instead of /browse?category=
     <Link
-      href={`/browse?category=${cat.slug}`}
+      href={`/browse/${cat.slug}`}
       style={{
         position: 'relative', borderRadius: '1rem', overflow: 'hidden',
         textDecoration: 'none', display: 'block', aspectRatio: '1 / 1',
@@ -67,6 +68,7 @@ export default function HomePage() {
 
         {/* DESKTOP NAV */}
         <div className="desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          {/* ✅ Browse links to /browse — all businesses no filter */}
           <Link href="/browse" style={{ color: '#888', fontSize: '0.9rem', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#c9933a')} onMouseLeave={e => (e.currentTarget.style.color = '#888')}>Browse</Link>
           <Link href="/login" style={{ color: '#888', fontSize: '0.9rem', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#c9933a')} onMouseLeave={e => (e.currentTarget.style.color = '#888')}>Login</Link>
           <Link href="/register/client" style={{ backgroundColor: '#c9933a', color: '#0a0a0a', padding: '0.6rem 1.25rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '0.9rem', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#b07d2a')} onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#c9933a')}>Sign Up</Link>
@@ -101,7 +103,7 @@ export default function HomePage() {
           <span style={{ color: '#c9933a' }}>Across Canada</span>
         </h1>
         <p style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1.15rem)', color: '#888', marginBottom: '2rem', lineHeight: '1.7', animation: 'fadeInUp 0.7s ease 0.2s both' }}>
-          Book appointments, browse services, and connect with your community — all in one place.
+          Book appointments, browse services, and connect with your community, all in one place.
         </p>
 
         {/* SEARCH BAR */}
@@ -116,6 +118,7 @@ export default function HomePage() {
               {cities.map(c => <option key={c}>{c}</option>)}
             </select>
           </div>
+          {/* ✅ Search goes to /browse with query params */}
           <Link href={`/browse?search=${search}&city=${city}`} style={{ backgroundColor: '#c9933a', color: '#0a0a0a', padding: '0.875rem 2rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '0.95rem', textDecoration: 'none', textAlign: 'center', display: 'block' }}
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#b07d2a')}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#c9933a')}>
@@ -126,7 +129,10 @@ export default function HomePage() {
 
       {/* CATEGORIES */}
       <section style={{ padding: '1rem 1rem clamp(2rem, 6vw, 6rem)', maxWidth: '1200px', margin: '0 auto' }}>
-        <h2 style={{ fontSize: 'clamp(1.1rem, 3.5vw, 1.5rem)', fontWeight: '700', textAlign: 'center', marginBottom: '1.25rem' }}>Browse by Category</h2>
+        {/* ✅ "Browse by Category" heading — NOT a link, just a heading */}
+        <h2 style={{ fontSize: 'clamp(1.1rem, 3.5vw, 1.5rem)', fontWeight: '700', textAlign: 'center', marginBottom: '1.25rem' }}>
+          Browse by Category
+        </h2>
         <div className="cat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem' }}>
           {categories.map((cat, i) => (
             <CategoryCard key={cat.slug} cat={cat} i={i} hoveredCat={hoveredCat} setHoveredCat={setHoveredCat} />
@@ -153,13 +159,16 @@ export default function HomePage() {
 
       {/* FOOTER */}
       <footer style={{ padding: '1.5rem 1rem', textAlign: 'center', fontSize: '0.8rem', color: '#555' }}>
+        <div style={{ marginBottom: '0.5rem' }}>
+          <Link href="/terms" style={{ color: '#555', textDecoration: 'none', marginRight: '1rem' }} onMouseEnter={e => (e.currentTarget.style.color = '#c9933a')} onMouseLeave={e => (e.currentTarget.style.color = '#555')}>Terms & Conditions</Link>
+          <Link href="/privacy" style={{ color: '#555', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#c9933a')} onMouseLeave={e => (e.currentTarget.style.color = '#555')}>Privacy Policy</Link>
+        </div>
         © 2025 Meda. Built for the Habesha community in Canada.
       </footer>
 
       <style>{`
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
-
         @media (min-width: 769px) {
           .cat-grid { grid-template-columns: repeat(5, 1fr) !important; }
           .stats-grid { grid-template-columns: repeat(4, 1fr) !important; }
@@ -167,14 +176,12 @@ export default function HomePage() {
           .mobile-menu-btn { display: none !important; }
           .search-row { flex-wrap: nowrap !important; }
         }
-
         @media (max-width: 768px) {
           .desktop-nav { display: none !important; }
           .mobile-menu-btn { display: flex !important; }
           .cat-grid { grid-template-columns: repeat(3, 1fr) !important; }
           .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
-
         @media (max-width: 480px) {
           .cat-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .search-row { flex-direction: column !important; }

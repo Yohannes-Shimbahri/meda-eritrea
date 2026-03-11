@@ -152,6 +152,74 @@ export default function BusinessProfile() {
 
   const avgRating = reviews.length > 0 ? (reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length).toFixed(1) : null
   const categoryLabel = (typeof business.category === 'object' ? business.category?.name : business.category)?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+  const contactType = business.contactType || 'BOOKING'
+  const phone = business.phone
+  const whatsapp = business.whatsapp || business.phone
+  const showBooking = contactType === 'BOOKING' || contactType === 'BOTH'
+  const showCall = contactType === 'CALL' || contactType === 'BOTH'
+  const showMessage = contactType === 'MESSAGE' || contactType === 'BOTH'
+
+  // Contact panel for non-booking businesses
+  const ContactPanel = () => (
+    <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '1.25rem', padding: '1.5rem' }}>
+      <h3 style={{ fontWeight: '800', fontSize: '1rem', marginBottom: '0.4rem' }}>Get in Touch</h3>
+      <p style={{ color: '#888', fontSize: '0.82rem', marginBottom: '1.25rem' }}>Reach out to this business directly</p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        {(showCall || showMessage) && phone && (
+          <a href={`tel:${phone}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '1rem', padding: '1rem 1.25rem', textDecoration: 'none', color: '#f5f0e8', transition: 'border-color 0.2s', cursor: 'pointer' }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = '#c9933a')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = '#333')}>
+            <span style={{ fontSize: '1.5rem' }}>📞</span>
+            <div>
+              <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>Call Us</div>
+              <div style={{ color: '#888', fontSize: '0.8rem' }}>{phone}</div>
+            </div>
+          </a>
+        )}
+
+        {(showMessage || showCall) && whatsapp && (
+          <a href={`https://wa.me/${whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', backgroundColor: '#0a1a0a', border: '1px solid #25d36633', borderRadius: '1rem', padding: '1rem 1.25rem', textDecoration: 'none', color: '#f5f0e8', transition: 'border-color 0.2s', cursor: 'pointer' }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = '#25d366')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = '#25d36633')}>
+            <span style={{ fontSize: '1.5rem' }}>💬</span>
+            <div>
+              <div style={{ fontWeight: '700', fontSize: '0.9rem', color: '#25d366' }}>WhatsApp</div>
+              <div style={{ color: '#888', fontSize: '0.8rem' }}>Message us directly</div>
+            </div>
+          </a>
+        )}
+
+        {business.instagram && (
+          <a href={`https://instagram.com/${business.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '1rem', padding: '1rem 1.25rem', textDecoration: 'none', color: '#f5f0e8', transition: 'border-color 0.2s' }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = '#e1306c')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = '#333')}>
+            <span style={{ fontSize: '1.5rem' }}>📸</span>
+            <div>
+              <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>Instagram</div>
+              <div style={{ color: '#888', fontSize: '0.8rem' }}>{business.instagram}</div>
+            </div>
+          </a>
+        )}
+
+        {business.website && (
+          <a href={business.website.startsWith('http') ? business.website : `https://${business.website}`} target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '1rem', padding: '1rem 1.25rem', textDecoration: 'none', color: '#f5f0e8', transition: 'border-color 0.2s' }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = '#60a5fa')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = '#333')}>
+            <span style={{ fontSize: '1.5rem' }}>🌐</span>
+            <div>
+              <div style={{ fontWeight: '700', fontSize: '0.9rem', color: '#60a5fa' }}>Website</div>
+              <div style={{ color: '#888', fontSize: '0.8rem' }}>{business.website}</div>
+            </div>
+          </a>
+        )}
+      </div>
+    </div>
+  )
 
   const BookingPanel = () => (
     <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '1.25rem', padding: '1.25rem' }}>
@@ -237,14 +305,32 @@ export default function BusinessProfile() {
 
       <p style={{ textAlign: 'center', color: '#555', fontSize: '0.78rem', marginTop: '0.65rem' }}>Free to use · No credit card required</p>
 
-      {(business.phone || business.instagram) && (
+      {/* Also show contact links below booking for BOTH type */}
+      {contactType === 'BOTH' && (phone || business.instagram) && (
         <div style={{ borderTop: '1px solid #222', marginTop: '1rem', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {business.phone && <a href={`tel:${business.phone}`} style={{ color: '#888', fontSize: '0.85rem', textDecoration: 'none' }}>📞 {business.phone}</a>}
-          {business.instagram && <span style={{ color: '#888', fontSize: '0.85rem' }}>📸 {business.instagram}</span>}
+          <div style={{ fontSize: '0.75rem', color: '#555', fontWeight: '600', marginBottom: '0.25rem' }}>OR CONTACT DIRECTLY</div>
+          {phone && <a href={`tel:${phone}`} style={{ color: '#888', fontSize: '0.85rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📞 {phone}</a>}
+          {whatsapp && <a href={`https://wa.me/${whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" style={{ color: '#25d366', fontSize: '0.85rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>💬 WhatsApp</a>}
         </div>
       )}
     </div>
   )
+
+  // Decide what to show in the right sidebar
+  const RightPanel = () => {
+    if (showBooking) return <BookingPanel />
+    return <ContactPanel />
+  }
+
+  // Mobile CTA label
+  const mobileCTALabel = showBooking ? '📅 Book Now' : showCall ? '📞 Call Now' : '💬 Contact'
+  const mobileCTAAction = showBooking
+    ? () => setBookingOpen(true)
+    : showCall && phone
+    ? () => window.location.href = `tel:${phone}`
+    : whatsapp
+    ? () => window.open(`https://wa.me/${whatsapp.replace(/\D/g, '')}`, '_blank')
+    : () => setBookingOpen(true)
 
   return (
     <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', color: '#f5f0e8', paddingBottom: '5rem' }}>
@@ -301,9 +387,9 @@ export default function BusinessProfile() {
             <button onClick={handleSave} disabled={saveLoading} style={{ padding: '0.5rem 0.875rem', borderRadius: '0.75rem', border: `1px solid ${saved ? '#c9933a' : '#333'}`, backgroundColor: saved ? '#c9933a22' : 'transparent', color: saved ? '#c9933a' : '#888', cursor: 'pointer', fontWeight: '600', fontSize: '0.82rem' }}>
               {saveLoading ? '...' : saved ? '♥ Saved' : '♡ Save'}
             </button>
-            {business.phone && <a href={`tel:${business.phone}`} style={{ padding: '0.5rem 0.875rem', borderRadius: '0.75rem', border: '1px solid #333', backgroundColor: '#111', color: '#f5f0e8', textDecoration: 'none', fontWeight: '600', fontSize: '0.82rem' }}>📞 Call</a>}
-            <button className="mobile-book-btn" onClick={() => setBookingOpen(true)} style={{ display: 'none', padding: '0.5rem 0.875rem', borderRadius: '0.75rem', border: 'none', backgroundColor: '#c9933a', color: '#0a0a0a', fontWeight: '700', fontSize: '0.82rem', cursor: 'pointer' }}>
-              📅 Book
+            {phone && <a href={`tel:${phone}`} style={{ padding: '0.5rem 0.875rem', borderRadius: '0.75rem', border: '1px solid #333', backgroundColor: '#111', color: '#f5f0e8', textDecoration: 'none', fontWeight: '600', fontSize: '0.82rem' }}>📞 Call</a>}
+            <button className="mobile-book-btn" onClick={mobileCTAAction} style={{ display: 'none', padding: '0.5rem 0.875rem', borderRadius: '0.75rem', border: 'none', backgroundColor: '#c9933a', color: '#0a0a0a', fontWeight: '700', fontSize: '0.82rem', cursor: 'pointer' }}>
+              {mobileCTALabel}
             </button>
           </div>
         </div>
@@ -355,8 +441,8 @@ export default function BusinessProfile() {
               <div className="services-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem', animation: 'fadeInUp 0.3s ease both' }}>
                 {business.services?.length === 0 && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#888' }}><div style={{ fontSize: '2rem' }}>💼</div><p>No services listed yet</p></div>}
                 {business.services?.map((service: any) => (
-                  <div key={service.id} onClick={() => setSelectedService(selectedService === service.name ? null : service.name)}
-                    style={{ backgroundColor: '#111', border: `2px solid ${selectedService === service.name ? '#c9933a' : '#222'}`, borderRadius: '1rem', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s', transform: selectedService === service.name ? 'scale(1.02)' : 'scale(1)' }}>
+                  <div key={service.id} onClick={() => showBooking ? setSelectedService(selectedService === service.name ? null : service.name) : undefined}
+                    style={{ backgroundColor: '#111', border: `2px solid ${selectedService === service.name ? '#c9933a' : '#222'}`, borderRadius: '1rem', overflow: 'hidden', cursor: showBooking ? 'pointer' : 'default', transition: 'all 0.2s', transform: selectedService === service.name ? 'scale(1.02)' : 'scale(1)' }}>
                     <div style={{ height: '110px', backgroundColor: '#1a1a1a', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {service.media?.[0]?.url ? <img src={service.media[0].url} alt={service.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ fontSize: '2.5rem' }}>💼</div>}
                       {selectedService === service.name && <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', backgroundColor: '#c9933a', color: '#0a0a0a', padding: '0.2rem 0.5rem', borderRadius: '1rem', fontSize: '0.65rem', fontWeight: '800' }}>✓ Selected</div>}
@@ -472,15 +558,15 @@ export default function BusinessProfile() {
             )}
           </div>
 
-          {/* RIGHT — BOOKING SIDEBAR (desktop only) */}
+          {/* RIGHT PANEL */}
           <div className="booking-sidebar" style={{ position: 'sticky' as const, top: '80px' }}>
-            <BookingPanel />
+            <RightPanel />
           </div>
         </div>
       </div>
 
-      {/* MOBILE BOOKING DRAWER */}
-      {bookingOpen && (
+      {/* MOBILE DRAWER — only for booking type */}
+      {bookingOpen && showBooking && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
           <div onClick={() => setBookingOpen(false)} style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)' }} />
           <div style={{ position: 'relative', backgroundColor: '#0a0a0a', borderRadius: '1.5rem 1.5rem 0 0', padding: '1.25rem', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -493,7 +579,21 @@ export default function BusinessProfile() {
         </div>
       )}
 
-      {/* MOBILE STICKY BOOK BAR */}
+      {/* MOBILE CONTACT DRAWER — for non-booking type */}
+      {bookingOpen && !showBooking && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div onClick={() => setBookingOpen(false)} style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)' }} />
+          <div style={{ position: 'relative', backgroundColor: '#0a0a0a', borderRadius: '1.5rem 1.5rem 0 0', padding: '1.25rem', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ fontWeight: '800', fontSize: '1.1rem', margin: 0 }}>Contact {business.name}</h3>
+              <button onClick={() => setBookingOpen(false)} style={{ background: 'none', border: '1px solid #333', color: '#888', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>✕</button>
+            </div>
+            <ContactPanel />
+          </div>
+        </div>
+      )}
+
+      {/* MOBILE STICKY BAR */}
       <div className="mobile-book-bar" style={{ display: 'none', position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200, backgroundColor: 'rgba(10,10,10,0.97)', borderTop: '1px solid #222', padding: '0.875rem 1rem', gap: '0.75rem', alignItems: 'center' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: '700', fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{business.name}</div>
@@ -502,8 +602,8 @@ export default function BusinessProfile() {
         <button onClick={handleSave} style={{ padding: '0.65rem 1rem', borderRadius: '0.75rem', border: `1px solid ${saved ? '#c9933a' : '#333'}`, backgroundColor: 'transparent', color: saved ? '#c9933a' : '#888', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem', flexShrink: 0 }}>
           {saved ? '♥' : '♡'}
         </button>
-        <button onClick={() => setBookingOpen(true)} style={{ backgroundColor: '#c9933a', color: '#0a0a0a', border: 'none', padding: '0.65rem 1.5rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '0.875rem', cursor: 'pointer', flexShrink: 0 }}>
-          📅 Book Now
+        <button onClick={mobileCTAAction} style={{ backgroundColor: '#c9933a', color: '#0a0a0a', border: 'none', padding: '0.65rem 1.5rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '0.875rem', cursor: 'pointer', flexShrink: 0 }}>
+          {mobileCTALabel}
         </button>
       </div>
 

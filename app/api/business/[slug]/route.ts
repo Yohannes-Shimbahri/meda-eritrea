@@ -1,12 +1,19 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
+const RESERVED = ['profile', 'categories', 'bookings', 'gallery', 'portfolio', 'services', 'hours', 'employees', 'analytics', 'create']
+
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const { slug } = await params
+
+    if (RESERVED.includes(slug)) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
 
     const business = await prisma.business.findFirst({
       where: { slug },

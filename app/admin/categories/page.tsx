@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 
-type Category = {
+type Subcategory = {
   id: string
   name: string
   slug: string
@@ -14,15 +14,32 @@ type Category = {
   _count?: { businesses: number }
 }
 
+type Category = {
+  id: string
+  name: string
+  slug: string
+  icon: string
+  imageUrl: string | null
+  description: string | null
+  isActive: boolean
+  order: number
+  subcategories: Subcategory[]
+  _count?: { businesses: number }
+}
+
 const POPULAR_ICONS = ['✂️','💇','💄','💈','🍽️','🎥','🎨','🚗','🍰','🔧','💅','🧴','👗','🎭','🎪','🏋️','🍕','🛁','🌸','🎶','📸','🏠','🪴','🐾','⚽','🎓','💼','🩺','✈️','🎁']
+
+type FormMode = 'none' | 'new-parent' | 'edit-parent' | 'new-sub' | 'edit-sub'
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
-  const [showForm, setShowForm] = useState(false)
+  const [formMode, setFormMode] = useState<FormMode>('none')
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [selectedParentId, setSelectedParentId] = useState<string | null>(null) // for new-sub
+  const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set())
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [imageBase64, setImageBase64] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -51,7 +68,8 @@ export default function AdminCategoriesPage() {
   const resetForm = () => {
     setForm({ name: '', icon: '🏢', description: '', order: '0' })
     setEditingId(null)
-    setShowForm(false)
+    setSelectedParentId(null)
+    setFormMode('none')
     setImagePreview(null)
     setImageBase64(null)
   }
@@ -69,12 +87,32 @@ export default function AdminCategoriesPage() {
     reader.readAsDataURL(file)
   }
 
-  const handleEdit = (cat: Category) => {
+  const handleEditParent = (cat: Category) => {
     setForm({ name: cat.name, icon: cat.icon, description: cat.description || '', order: String(cat.order) })
     setEditingId(cat.id)
     setImagePreview(cat.imageUrl || null)
     setImageBase64(null)
-    setShowForm(true)
+    setFormMode('edit-parent')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleEditSub = (sub: Subcategory, parentId: string) => {
+    setForm({ name: sub.name, icon: sub.icon, description: sub.description || '', order: String(sub.order) })
+    setEditingId(sub.id)
+    setSelectedParentId(parentId)
+    setImagePreview(sub.imageUrl || null)
+    setImageBase64(null)
+    setFormMode('edit-sub')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleNewSub = (parentId: string) => {
+    setForm({ name: '', icon: '🏢', description: '', order: '0' })
+    setSelectedParentId(parentId)
+    setEditingId(null)
+    setImagePreview(null)
+    setImageBase64(null)
+    setFormMode('new-sub')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -83,54 +121,71 @@ export default function AdminCategoriesPage() {
     setSaving(true)
     try {
       const headers = await getHeaders()
-      const body = {
+      const isEditing = editingId !== null
+      const isSub = formMode === 'new-sub' || formMode === 'edit-sub'
+
+      const body: any = {
         ...form,
         order: Number(form.order),
-        ...(editingId ? { id: editingId } : {}),
+        ...(isEditing ? { id: editingId } : {}),
         ...(imageBase64 ? { imageBase64 } : {}),
+        ...(isSub ? { parentId: selectedParentId } : { parentId: null }),
       }
+
       const res = await fetch('/api/admin/categories', {
-        method: editingId ? 'PATCH' : 'POST',
+        method: isEditing ? 'PATCH' : 'POST',
         headers,
         body: JSON.stringify(body),
       })
       const data = await res.json()
-      if (data.success) { showMsg(editingId ? '✓ Category updated!' : '✓ Category created!'); resetForm(); load() }
-      else showMsg(data.error || 'Failed')
+      if (data.success) {
+        showMsg(isEditing ? '✓ Updated!' : `✓ ${isSub ? 'Subcategory' : 'Category'} created!`)
+        resetForm()
+        load()
+        // Auto-expand parent after adding sub
+        if (isSub && selectedParentId) {
+          setExpandedCats(prev => new Set([...prev, selectedParentId]))
+        }
+      } else showMsg(data.error || 'Failed')
     } catch { showMsg('Error saving') }
     finally { setSaving(false) }
   }
 
-  const handleToggle = async (cat: Category) => {
+  const handleToggle = async (id: string, isActive: boolean, name: string) => {
     const headers = await getHeaders()
     const res = await fetch('/api/admin/categories', {
       method: 'PATCH',
       headers,
-      body: JSON.stringify({ id: cat.id, isActive: !cat.isActive }),
+      body: JSON.stringify({ id, isActive: !isActive }),
     })
     const data = await res.json()
-    if (data.success) { showMsg(`✓ ${cat.name} ${!cat.isActive ? 'enabled' : 'disabled'}`); load() }
+    if (data.success) { showMsg(`✓ ${name} ${!isActive ? 'enabled' : 'disabled'}`); load() }
     else showMsg(data.error || 'Failed')
   }
 
-  const handleDelete = async (cat: Category) => {
-    if (!confirm(`Delete "${cat.name}"? This cannot be undone.`)) return
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return
     const headers = await getHeaders()
     const res = await fetch('/api/admin/categories', {
       method: 'DELETE',
       headers,
-      body: JSON.stringify({ id: cat.id }),
+      body: JSON.stringify({ id }),
     })
     const data = await res.json()
     if (data.success) { showMsg('✓ Deleted'); load() }
     else showMsg(data.error || 'Cannot delete')
   }
 
-  // ── Drag & Drop reorder ─────────────────────────────────
-  const handleDragStart = (index: number) => {
-    dragItem.current = index
+  const toggleExpand = (id: string) => {
+    setExpandedCats(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
   }
 
+  // Drag reorder (parent categories only)
+  const handleDragStart = (index: number) => { dragItem.current = index }
   const handleDragEnter = (index: number) => {
     if (dragItem.current === null || dragItem.current === index) return
     const updated = [...categories]
@@ -139,23 +194,22 @@ export default function AdminCategoriesPage() {
     dragItem.current = index
     setCategories(updated.map((cat, i) => ({ ...cat, order: i })))
   }
-
   const handleDragEnd = async () => {
     dragItem.current = null
-    // Persist all new order values to DB
     const headers = await getHeaders()
-    await Promise.all(
-      categories.map((cat, idx) =>
-        fetch('/api/admin/categories', {
-          method: 'PATCH',
-          headers,
-          body: JSON.stringify({ id: cat.id, order: idx }),
-        })
-      )
-    )
-    showMsg('✓ Order saved — home page updated')
+    await Promise.all(categories.map((cat, idx) =>
+      fetch('/api/admin/categories', { method: 'PATCH', headers, body: JSON.stringify({ id: cat.id, order: idx }) })
+    ))
+    showMsg('✓ Order saved')
   }
-  // ────────────────────────────────────────────────────────
+
+  const formTitle = {
+    'new-parent': '➕ New Category',
+    'edit-parent': '✏️ Edit Category',
+    'new-sub': `➕ New Subcategory under "${categories.find(c => c.id === selectedParentId)?.name}"`,
+    'edit-sub': '✏️ Edit Subcategory',
+    'none': '',
+  }[formMode]
 
   const s = {
     page: { backgroundColor: '#0a0a0a', minHeight: '100vh', color: '#f5f0e8', padding: '2rem', fontFamily: 'system-ui, sans-serif' },
@@ -165,17 +219,21 @@ export default function AdminCategoriesPage() {
     btn: (color = '#c9933a') => ({ backgroundColor: color, color: color === '#333' ? '#888' : '#0a0a0a', border: 'none', padding: '0.7rem 1.4rem', borderRadius: '0.75rem', fontWeight: '700' as const, cursor: 'pointer', fontSize: '0.9rem' }),
   }
 
+  const totalSubs = categories.reduce((a, c) => a + (c.subcategories?.length || 0), 0)
+
   return (
     <div style={s.page}>
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '860px', margin: '0 auto' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <div>
             <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.25rem' }}>Categories</h1>
-            <p style={{ color: '#888', fontSize: '0.9rem' }}>{categories.length} categories · drag to reorder</p>
+            <p style={{ color: '#888', fontSize: '0.9rem' }}>
+              {categories.length} categories · {totalSubs} subcategories · drag to reorder
+            </p>
           </div>
-          <button onClick={() => { resetForm(); setShowForm(true) }} style={s.btn()}>+ New Category</button>
+          <button onClick={() => { resetForm(); setFormMode('new-parent') }} style={s.btn()}>+ New Category</button>
         </div>
 
         {msg && (
@@ -184,17 +242,17 @@ export default function AdminCategoriesPage() {
           </div>
         )}
 
-        {/* Add / Edit Form */}
-        {showForm && (
+        {/* Form */}
+        {formMode !== 'none' && (
           <div style={s.card}>
-            <h2 style={{ fontWeight: '700', marginBottom: '1.25rem', fontSize: '1rem' }}>
-              {editingId ? '✏️ Edit Category' : '➕ New Category'}
-            </h2>
+            <h2 style={{ fontWeight: '700', marginBottom: '1.25rem', fontSize: '1rem' }}>{formTitle}</h2>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
               <div>
-                <label style={s.label}>Category Name *</label>
-                <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Nail Salon" style={s.input}
+                <label style={s.label}>Name *</label>
+                <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                  placeholder={formMode.includes('sub') ? 'e.g. Restaurants' : 'e.g. Food & Dining'}
+                  style={s.input}
                   onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')}
                   onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
               </div>
@@ -213,45 +271,32 @@ export default function AdminCategoriesPage() {
                 onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
             </div>
 
-            {/* Image Upload */}
-            <div style={{ marginBottom: '1.25rem' }}>
-              <label style={s.label}>Category Image (optional — shown on browse page)</label>
-              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                <div onClick={() => fileInputRef.current?.click()}
-                  style={{ width: '100px', height: '100px', borderRadius: '0.875rem', border: `2px dashed ${imagePreview ? '#c9933a' : '#333'}`, overflow: 'hidden', cursor: 'pointer', flexShrink: 0, backgroundColor: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                  {imagePreview ? (
-                    <img src={imagePreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <div style={{ textAlign: 'center', color: '#555', fontSize: '0.75rem' }}>
-                      <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>📷</div>
-                      <div>Click to upload</div>
-                    </div>
-                  )}
-                  {imagePreview && (
-                    <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', opacity: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: '#fff', fontWeight: '600' }}
-                      onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                      onMouseLeave={e => (e.currentTarget.style.opacity = '0')}>
-                      Change
-                    </div>
-                  )}
-                </div>
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
-                <div style={{ flex: 1 }}>
-                  <p style={{ color: '#666', fontSize: '0.8rem', lineHeight: 1.5, margin: 0 }}>
-                    Upload a photo representing this category. It will be displayed on the browse page alongside the icon. Square images work best. Max 5MB.
-                  </p>
-                  {imagePreview && (
-                    <button onClick={() => { setImagePreview(null); setImageBase64(null) }} style={{ marginTop: '0.5rem', background: 'none', border: '1px solid #333', color: '#e05c5c', padding: '0.3rem 0.7rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.78rem' }}>
-                      Remove image
-                    </button>
-                  )}
+            {/* Image Upload — only for parent categories */}
+            {!formMode.includes('sub') && (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={s.label}>Category Image (shown on home page browse grid)</label>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                  <div onClick={() => fileInputRef.current?.click()}
+                    style={{ width: '100px', height: '100px', borderRadius: '0.875rem', border: `2px dashed ${imagePreview ? '#c9933a' : '#333'}`, overflow: 'hidden', cursor: 'pointer', flexShrink: 0, backgroundColor: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                    {imagePreview
+                      ? <img src={imagePreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <div style={{ textAlign: 'center', color: '#555', fontSize: '0.75rem' }}><div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>📷</div><div>Click to upload</div></div>
+                    }
+                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
+                  <div style={{ flex: 1 }}>
+                    <p style={{ color: '#666', fontSize: '0.8rem', lineHeight: 1.5, margin: 0 }}>Square images work best. Max 5MB.</p>
+                    {imagePreview && (
+                      <button onClick={() => { setImagePreview(null); setImageBase64(null) }} style={{ marginTop: '0.5rem', background: 'none', border: '1px solid #333', color: '#e05c5c', padding: '0.3rem 0.7rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.78rem' }}>Remove image</button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Emoji Icon */}
             <div style={{ marginBottom: '1.25rem' }}>
-              <label style={s.label}>Emoji Icon (fallback if no image) — selected: <span style={{ fontSize: '1.2rem' }}>{form.icon}</span></label>
+              <label style={s.label}>Emoji Icon — selected: <span style={{ fontSize: '1.2rem' }}>{form.icon}</span></label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
                 {POPULAR_ICONS.map(icon => (
                   <button key={icon} onClick={() => setForm(p => ({ ...p, icon }))} style={{ fontSize: '1.4rem', background: form.icon === icon ? '#1a1200' : 'transparent', border: `2px solid ${form.icon === icon ? '#c9933a' : '#333'}`, borderRadius: '0.5rem', width: '42px', height: '42px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -264,7 +309,7 @@ export default function AdminCategoriesPage() {
 
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button onClick={handleSave} disabled={saving} style={s.btn()}>
-                {saving ? 'Saving...' : editingId ? 'Update Category' : 'Create Category'}
+                {saving ? 'Saving...' : editingId ? 'Update' : 'Create'}
               </button>
               <button onClick={resetForm} style={s.btn('#333')}>Cancel</button>
             </div>
@@ -282,69 +327,102 @@ export default function AdminCategoriesPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <p style={{ color: '#555', fontSize: '0.78rem', margin: '0 0 0.5rem' }}>
-              ⠿ Drag to reorder — order is saved automatically and reflected on the home page
+              ⠿ Drag to reorder parent categories
             </p>
-            {categories.map((cat, index) => (
-              <div
-                key={cat.id}
-                draggable
-                onDragStart={() => handleDragStart(index)}
-                onDragEnter={() => handleDragEnter(index)}
-                onDragEnd={handleDragEnd}
-                onDragOver={e => e.preventDefault()}
-                style={{
-                  backgroundColor: '#111',
-                  border: `1px solid ${cat.isActive ? '#333' : '#1a1200'}`,
-                  borderRadius: '1rem', padding: '1.25rem',
-                  display: 'flex', alignItems: 'center', gap: '1rem',
-                  opacity: cat.isActive ? 1 : 0.6,
-                  cursor: 'grab', userSelect: 'none',
-                  transition: 'border-color 0.15s',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = '#c9933a55')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = cat.isActive ? '#333' : '#1a1200')}
-              >
-                {/* Drag handle + position number */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', flexShrink: 0 }}>
-                  <span style={{ color: '#555', fontSize: '1.1rem', lineHeight: 1 }}>⠿</span>
-                  <span style={{ color: '#c9933a', fontSize: '0.65rem', fontWeight: '800', backgroundColor: '#1a1200', padding: '0.1rem 0.35rem', borderRadius: '0.3rem' }}>#{index + 1}</span>
-                </div>
+            {categories.map((cat, index) => {
+              const isExpanded = expandedCats.has(cat.id)
+              return (
+                <div key={cat.id}>
+                  {/* Parent category row */}
+                  <div
+                    draggable
+                    onDragStart={() => handleDragStart(index)}
+                    onDragEnter={() => handleDragEnter(index)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={e => e.preventDefault()}
+                    style={{ backgroundColor: '#111', border: `1px solid ${cat.isActive ? '#333' : '#1a1200'}`, borderRadius: isExpanded ? '1rem 1rem 0 0' : '1rem', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', opacity: cat.isActive ? 1 : 0.6, cursor: 'grab', userSelect: 'none', transition: 'border-color 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#c9933a55')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = cat.isActive ? '#333' : '#1a1200')}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', flexShrink: 0 }}>
+                      <span style={{ color: '#555', fontSize: '1.1rem', lineHeight: 1 }}>⠿</span>
+                      <span style={{ color: '#c9933a', fontSize: '0.65rem', fontWeight: '800', backgroundColor: '#1a1200', padding: '0.1rem 0.35rem', borderRadius: '0.3rem' }}>#{index + 1}</span>
+                    </div>
 
-                {/* Image or icon */}
-                <div style={{ width: '56px', height: '56px', borderRadius: '0.75rem', overflow: 'hidden', backgroundColor: '#0a0a0a', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {cat.imageUrl ? (
-                    <img src={cat.imageUrl} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <span style={{ fontSize: '1.75rem' }}>{cat.icon}</span>
+                    <div style={{ width: '56px', height: '56px', borderRadius: '0.75rem', overflow: 'hidden', backgroundColor: '#0a0a0a', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {cat.imageUrl
+                        ? <img src={cat.imageUrl} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <span style={{ fontSize: '1.75rem' }}>{cat.icon}</span>
+                      }
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: '700', fontSize: '1rem' }}>{cat.name}</span>
+                        {!cat.isActive && <span style={{ fontSize: '0.7rem', backgroundColor: '#333', color: '#888', padding: '0.1rem 0.5rem', borderRadius: '1rem', fontWeight: '700' }}>HIDDEN</span>}
+                        {cat.imageUrl && <span style={{ fontSize: '0.7rem', backgroundColor: '#0a1f0a', color: '#4ade80', padding: '0.1rem 0.5rem', borderRadius: '1rem', fontWeight: '700' }}>📷 Photo</span>}
+                        <span style={{ fontSize: '0.7rem', backgroundColor: '#1a1200', color: '#c9933a', padding: '0.1rem 0.5rem', borderRadius: '1rem', fontWeight: '700' }}>
+                          {cat.subcategories?.length || 0} subcategories
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#555' }}>
+                        /{cat.slug} · {cat._count?.businesses ?? 0} businesses
+                      </div>
+                      {cat.description && <div style={{ fontSize: '0.8rem', color: '#888', marginTop: '0.25rem' }}>{cat.description}</div>}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      <button onClick={() => toggleExpand(cat.id)} style={{ background: 'none', border: '1px solid #c9933a44', color: '#c9933a', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' }}>
+                        {isExpanded ? '▲ Hide' : `▼ Subs (${cat.subcategories?.length || 0})`}
+                      </button>
+                      <button onClick={() => handleEditParent(cat)} style={{ background: 'none', border: '1px solid #333', color: '#888', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.8rem' }}>Edit</button>
+                      <button onClick={() => handleToggle(cat.id, cat.isActive, cat.name)} style={{ background: 'none', border: `1px solid ${cat.isActive ? '#333' : '#c9933a44'}`, color: cat.isActive ? '#888' : '#c9933a', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.8rem' }}>
+                        {cat.isActive ? 'Hide' : 'Show'}
+                      </button>
+                      <button onClick={() => handleDelete(cat.id, cat.name)} style={{ background: 'none', border: '1px solid #e05c5c33', color: '#e05c5c', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.8rem' }}
+                        disabled={(cat._count?.businesses ?? 0) > 0}
+                        title={(cat._count?.businesses ?? 0) > 0 ? 'Cannot delete — businesses use this category' : 'Delete'}>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Subcategories panel */}
+                  {isExpanded && (
+                    <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #333', borderTop: 'none', borderRadius: '0 0 1rem 1rem', padding: '1rem' }}>
+                      {(cat.subcategories?.length || 0) === 0 ? (
+                        <p style={{ color: '#444', fontSize: '0.82rem', textAlign: 'center', margin: '0.5rem 0' }}>No subcategories yet</p>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.75rem' }}>
+                          {cat.subcategories.map((sub) => (
+                            <div key={sub.id} style={{ backgroundColor: '#111', border: '1px solid #1e1e1e', borderRadius: '0.75rem', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                              <span style={{ fontSize: '1.2rem' }}>{sub.icon}</span>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                  <span style={{ fontWeight: '600', fontSize: '0.88rem' }}>{sub.name}</span>
+                                  {!sub.isActive && <span style={{ fontSize: '0.65rem', backgroundColor: '#333', color: '#888', padding: '0.1rem 0.4rem', borderRadius: '1rem' }}>HIDDEN</span>}
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#555' }}>/{sub.slug} · {sub._count?.businesses ?? 0} businesses</div>
+                              </div>
+                              <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }}>
+                                <button onClick={() => handleEditSub(sub, cat.id)} style={{ background: 'none', border: '1px solid #333', color: '#888', padding: '0.3rem 0.6rem', borderRadius: '0.4rem', cursor: 'pointer', fontSize: '0.75rem' }}>Edit</button>
+                                <button onClick={() => handleToggle(sub.id, sub.isActive, sub.name)} style={{ background: 'none', border: `1px solid ${sub.isActive ? '#333' : '#c9933a44'}`, color: sub.isActive ? '#888' : '#c9933a', padding: '0.3rem 0.6rem', borderRadius: '0.4rem', cursor: 'pointer', fontSize: '0.75rem' }}>
+                                  {sub.isActive ? 'Hide' : 'Show'}
+                                </button>
+                                <button onClick={() => handleDelete(sub.id, sub.name)} style={{ background: 'none', border: '1px solid #e05c5c33', color: '#e05c5c', padding: '0.3rem 0.6rem', borderRadius: '0.4rem', cursor: 'pointer', fontSize: '0.75rem' }}>Delete</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <button onClick={() => handleNewSub(cat.id)} style={{ background: 'none', border: '1px dashed #c9933a55', color: '#c9933a', padding: '0.5rem 1rem', borderRadius: '0.6rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '600', width: '100%' }}>
+                        + Add Subcategory to {cat.name}
+                      </button>
+                    </div>
                   )}
                 </div>
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
-                    <span style={{ fontWeight: '700', fontSize: '1rem' }}>{cat.name}</span>
-                    {!cat.isActive && <span style={{ fontSize: '0.7rem', backgroundColor: '#333', color: '#888', padding: '0.1rem 0.5rem', borderRadius: '1rem', fontWeight: '700' }}>HIDDEN</span>}
-                    {cat.imageUrl && <span style={{ fontSize: '0.7rem', backgroundColor: '#0a1f0a', color: '#4ade80', padding: '0.1rem 0.5rem', borderRadius: '1rem', fontWeight: '700' }}>📷 Photo</span>}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: '#555' }}>
-                    /{cat.slug} · {cat._count?.businesses ?? 0} businesses
-                  </div>
-                  {cat.description && <div style={{ fontSize: '0.8rem', color: '#888', marginTop: '0.25rem' }}>{cat.description}</div>}
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-                  <button onClick={() => handleEdit(cat)} style={{ background: 'none', border: '1px solid #333', color: '#888', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.8rem' }}>Edit</button>
-                  <button onClick={() => handleToggle(cat)} style={{ background: 'none', border: `1px solid ${cat.isActive ? '#333' : '#c9933a44'}`, color: cat.isActive ? '#888' : '#c9933a', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.8rem' }}>
-                    {cat.isActive ? 'Hide' : 'Show'}
-                  </button>
-                  <button onClick={() => handleDelete(cat)}
-                    style={{ background: 'none', border: '1px solid #e05c5c33', color: '#e05c5c', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.8rem' }}
-                    disabled={(cat._count?.businesses ?? 0) > 0}
-                    title={(cat._count?.businesses ?? 0) > 0 ? 'Cannot delete — businesses use this category' : 'Delete'}>
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

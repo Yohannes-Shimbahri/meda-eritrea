@@ -21,11 +21,18 @@ export async function signUpClient({
 }
 
 export async function signUpBusiness({
-  email, password, fullName, businessName, categoryId, city, size, hasBooking, acceptsWalkIns
+  email, password, fullName, businessName, categoryId, categorySelections, city, size, hasBooking, acceptsWalkIns
 }: {
-  email: string; password: string; fullName: string
-  businessName: string; categoryId: string; city: string
-  size: string; hasBooking: boolean; acceptsWalkIns: boolean
+  email: string
+  password: string
+  fullName: string
+  businessName: string
+  categoryId: string
+  categorySelections: { categoryId: string; subcategoryId: string }[]
+  city: string
+  size: string
+  hasBooking: boolean
+  acceptsWalkIns: boolean
 }) {
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -44,6 +51,7 @@ export async function signUpBusiness({
     }
   })
   if (error) throw error
+
   await fetch('/api/business/create', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -51,7 +59,9 @@ export async function signUpBusiness({
       email,
       ownerName: fullName,
       businessName,
-      categoryId,   // ← categoryId instead of category enum
+      categoryId,
+      // ✅ Pass all category selections to be saved in BusinessCategory table
+      categorySelections: categorySelections.filter(s => s.categoryId),
       city,
       size,
       hasBooking,

@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await request.json()
-    const { name, phone, address, instagram, facebook, website, bio, coverPhoto, logo } = body
+    const { name, phone, whatsapp, address, instagram, facebook, website, bio, contactType, coverPhoto, logo } = body
 
     const business = await prisma.business.findFirst({
       where: { owner: { email } }
@@ -35,11 +35,13 @@ export async function POST(request: Request) {
       data: {
         name: name || undefined,
         phone: phone || undefined,
+        whatsapp: whatsapp || undefined,
         address: address || undefined,
         instagram: instagram || undefined,
         facebook: facebook || undefined,
         website: website || undefined,
         description: bio || undefined,
+        contactType: contactType || undefined,
       }
     })
 
