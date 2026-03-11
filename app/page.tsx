@@ -45,14 +45,17 @@ export default function HomePage() {
   const [categories, setCategories] = useState<{ name: string; slug: string; image: string }[]>([])
 
   useEffect(() => {
-    fetch(`/api/admin/categories?t=${Date.now()}`, { cache: 'no-store' })      .then(r => r.json())
+    fetch(`/api/admin/categories?t=${Date.now()}`, { cache: 'no-store' })
+      .then(r => r.json())
       .then(data => {
         if (data.categories) {
-          setCategories(data.categories.map((c: any) => ({
-            name: c.name,
-            slug: c.slug,
-            image: c.imageUrl || `/categories/${c.slug}.jpg`,
-          })))
+          setCategories(data.categories
+            .filter((c: any) => !c.parentId)
+            .map((c: any) => ({
+              name: c.name,
+              slug: c.slug,
+              image: c.imageUrl || `/categories/${c.slug}.jpg`,
+            })))
         }
       })
       .catch(() => {})
