@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 
-const prisma = new PrismaClient()
 
 // Simple JWT decode without verification (token already verified by Supabase)
 function decodeToken(token: string): { sub?: string } | null {
