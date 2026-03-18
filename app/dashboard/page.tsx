@@ -5,17 +5,25 @@ import { supabase } from '@/lib/supabase'
 
 export default function ClientDashboard() {
   const [user, setUser] = useState<{ email?: string; user_metadata?: { full_name?: string } } | null>(null)
-  const [activeTab, setActiveTab] = useState<'bookings' | 'saved'>('bookings')
+  const [token, setToken] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'bookings' | 'saved' | 'profile'>('bookings')
   const [bookings, setBookings] = useState<any[]>([])
   const [savedBusinesses, setSavedBusinesses] = useState<any[]>([])
   const [loadingSaved, setLoadingSaved] = useState(false)
   const [unsaving, setUnsaving] = useState<string | null>(null)
+
+  // Profile state
+  const [profile, setProfile] = useState<{ fullName: string; phone: string; preferredLanguage: string; email: string; createdAt?: string; _count?: { bookings: number; reviews: number; savedBusinesses: number } } | null>(null)
+  const [editProfile, setEditProfile] = useState({ fullName: '', phone: '', preferredLanguage: 'en' })
+  const [savingProfile, setSavingProfile] = useState(false)
+  const [profileMsg, setProfileMsg] = useState('')
 
   useEffect(() => {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
       setUser(session.user)
+      setToken(session.access_token)
       const res = await fetch('/api/bookings/my', { headers: { Authorization: `Bearer ${session.access_token}` } })
       const data = await res.json()
       if (data.bookings) setBookings(data.bookings)
@@ -34,7 +42,25 @@ export default function ClientDashboard() {
     } catch { } finally { setLoadingSaved(false) }
   }
 
+  const loadProfile = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      const res = await fetch('/api/user/profile', { headers: { Authorization: `Bearer ${session.access_token}` } })
+      const data = await res.json()
+      if (data.user) {
+        setProfile(data.user)
+        setEditProfile({
+          fullName: data.user.fullName || '',
+          phone: data.user.phone || '',
+          preferredLanguage: data.user.preferredLanguage || 'en',
+        })
+      }
+    } catch { }
+  }
+
   useEffect(() => { if (activeTab === 'saved') loadSaved() }, [activeTab])
+  useEffect(() => { if (activeTab === 'profile') loadProfile() }, [activeTab])
 
   const handleUnsave = async (businessId: string) => {
     setUnsaving(businessId)
@@ -45,6 +71,28 @@ export default function ClientDashboard() {
     } catch { } finally { setUnsaving(null) }
   }
 
+  const handleSaveProfile = async () => {
+    setSavingProfile(true)
+    setProfileMsg('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      const res = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify(editProfile),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setProfile(prev => prev ? { ...prev, ...editProfile } : prev)
+        setProfileMsg('✓ Profile updated')
+        setTimeout(() => setProfileMsg(''), 3000)
+      } else {
+        setProfileMsg('Failed to update')
+      }
+    } catch { setProfileMsg('Error saving') } finally { setSavingProfile(false) }
+  }
+
   const name = user?.user_metadata?.full_name || user?.email || 'there'
 
   const statusStyle = (status: string) => ({
@@ -52,6 +100,13 @@ export default function ClientDashboard() {
     backgroundColor: status === 'CONFIRMED' ? '#0a1f0a' : status === 'CANCELLED' ? '#1f0a0a' : status === 'COMPLETED' ? '#0a0a1f' : '#1a1200',
     color: status === 'CONFIRMED' ? '#4ade80' : status === 'CANCELLED' ? '#e05c5c' : status === 'COMPLETED' ? '#60a5fa' : '#c9933a',
   })
+
+  const inputStyle = {
+    width: '100%', background: '#0a0a0a', border: '1px solid #333', borderRadius: '0.75rem',
+    padding: '0.75rem 1rem', color: '#f5f0e8', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' as const,
+  }
+
+  const labelStyle = { fontSize: '0.8rem', color: '#888', marginBottom: '0.4rem', display: 'block' as const }
 
   return (
     <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', color: '#f5f0e8' }}>
@@ -116,7 +171,11 @@ export default function ClientDashboard() {
         {/* TABS */}
         <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1.25rem', overflow: 'hidden', animation: 'fadeInUp 0.5s ease 0.15s both' }}>
           <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #222', display: 'flex', gap: '0.5rem', overflowX: 'auto' }}>
-            {([{ id: 'bookings', label: `📅 My Bookings`, count: bookings.length }, { id: 'saved', label: '❤️ Saved', count: savedBusinesses.length }] as const).map(tab => (
+            {([
+              { id: 'bookings', label: '📅 My Bookings', count: bookings.length },
+              { id: 'saved', label: '❤️ Saved', count: savedBusinesses.length },
+              { id: 'profile', label: '👤 Profile', count: 0 },
+            ] as const).map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ padding: '0.6rem 1.25rem', borderRadius: '0.75rem', fontWeight: '600', fontSize: '0.9rem', cursor: 'pointer', border: 'none', backgroundColor: activeTab === tab.id ? '#c9933a' : 'transparent', color: activeTab === tab.id ? '#0a0a0a' : '#888', display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}>
                 {tab.label}
                 {tab.count > 0 && <span style={{ backgroundColor: activeTab === tab.id ? 'rgba(0,0,0,0.2)' : '#222', color: activeTab === tab.id ? '#0a0a0a' : '#c9933a', borderRadius: '1rem', padding: '0.1rem 0.5rem', fontSize: '0.75rem', fontWeight: '800' }}>{tab.count}</span>}
@@ -125,6 +184,8 @@ export default function ClientDashboard() {
           </div>
 
           <div style={{ padding: '1.5rem' }}>
+
+            {/* ── BOOKINGS TAB ── */}
             {activeTab === 'bookings' && (
               bookings.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '3rem 0' }}>
@@ -159,6 +220,7 @@ export default function ClientDashboard() {
               )
             )}
 
+            {/* ── SAVED TAB ── */}
             {activeTab === 'saved' && (
               loadingSaved ? (
                 <div style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>Loading saved businesses...</div>
@@ -188,6 +250,101 @@ export default function ClientDashboard() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )
+            )}
+
+            {/* ── PROFILE TAB ── */}
+            {activeTab === 'profile' && (
+              !profile ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>Loading profile...</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+                  {/* Avatar + member info */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', backgroundColor: '#0a0a0a', border: '1px solid #222', borderRadius: '1rem', padding: '1.25rem' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#c9933a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '1.5rem', color: '#0a0a0a', flexShrink: 0 }}>
+                      {(profile.fullName || profile.email || 'U').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: '700', fontSize: '1.1rem' }}>{profile.fullName}</div>
+                      <div style={{ color: '#888', fontSize: '0.85rem' }}>{profile.email}</div>
+                      <div style={{ color: '#555', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                        Member since {new Date(profile.createdAt!).toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats row */}
+                  {profile._count && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                      {[
+                        { label: 'Bookings', value: profile._count.bookings, icon: '📅' },
+                        { label: 'Reviews', value: profile._count.reviews, icon: '⭐' },
+                        { label: 'Saved', value: profile._count.savedBusinesses, icon: '❤️' },
+                      ].map(s => (
+                        <div key={s.label} style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', borderRadius: '0.875rem', padding: '1rem', textAlign: 'center' }}>
+                          <div style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>{s.icon}</div>
+                          <div style={{ fontWeight: '800', fontSize: '1.25rem', color: '#c9933a' }}>{s.value}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#888' }}>{s.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Edit form */}
+                  <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #222', borderRadius: '1rem', padding: '1.25rem' }}>
+                    <h3 style={{ fontWeight: '700', fontSize: '0.95rem', marginBottom: '1.25rem', color: '#f5f0e8' }}>Edit Profile</h3>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <div>
+                        <label style={labelStyle}>Full Name</label>
+                        <input value={editProfile.fullName} onChange={e => setEditProfile(p => ({ ...p, fullName: e.target.value }))}
+                          style={inputStyle}
+                          onFocus={e => e.currentTarget.style.borderColor = '#c9933a'}
+                          onBlur={e => e.currentTarget.style.borderColor = '#333'} />
+                      </div>
+
+                      <div>
+                        <label style={labelStyle}>Email</label>
+                        <input value={profile.email} disabled
+                          style={{ ...inputStyle, color: '#555', cursor: 'not-allowed' }} />
+                        <p style={{ fontSize: '0.75rem', color: '#444', marginTop: '0.3rem' }}>Email cannot be changed here</p>
+                      </div>
+
+                      <div>
+                        <label style={labelStyle}>Phone Number</label>
+                        <input value={editProfile.phone} onChange={e => setEditProfile(p => ({ ...p, phone: e.target.value }))}
+                          placeholder="+1 (416) 555-0000"
+                          style={inputStyle}
+                          onFocus={e => e.currentTarget.style.borderColor = '#c9933a'}
+                          onBlur={e => e.currentTarget.style.borderColor = '#333'} />
+                      </div>
+
+                      <div>
+                        <label style={labelStyle}>Preferred Language</label>
+                        <select value={editProfile.preferredLanguage} onChange={e => setEditProfile(p => ({ ...p, preferredLanguage: e.target.value }))}
+                          style={{ ...inputStyle, cursor: 'pointer' }}>
+                          <option value="en">English</option>
+                          <option value="am">Amharic (አማርኛ)</option>
+                          <option value="ti">Tigrinya (ትግርኛ)</option>
+                        </select>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingTop: '0.25rem' }}>
+                        <button onClick={handleSaveProfile} disabled={savingProfile}
+                          style={{ backgroundColor: '#c9933a', color: '#0a0a0a', border: 'none', padding: '0.75rem 1.75rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '0.9rem', cursor: savingProfile ? 'not-allowed' : 'pointer', opacity: savingProfile ? 0.7 : 1 }}>
+                          {savingProfile ? 'Saving...' : 'Save Changes'}
+                        </button>
+                        {profileMsg && (
+                          <span style={{ fontSize: '0.85rem', color: profileMsg.startsWith('✓') ? '#4ade80' : '#e05c5c', fontWeight: '600' }}>
+                            {profileMsg}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               )
             )}
