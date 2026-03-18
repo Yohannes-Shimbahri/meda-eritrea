@@ -351,7 +351,7 @@ export default function BusinessProfile() {
       </nav>
 
       {/* COVER */}
-      <div style={{ height: 'clamp(120px, 22vw, 220px)', backgroundColor: '#111', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ height: 'clamp(80px, 18vw, 220px)', backgroundColor: '#111', position: 'relative', overflow: 'hidden' }}>
         {business.media?.find((m: any) => m.caption === 'cover')?.url ? (
           <img src={business.media.find((m: any) => m.caption === 'cover').url} alt="cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
