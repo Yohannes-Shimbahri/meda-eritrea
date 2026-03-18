@@ -46,7 +46,7 @@ export default function ClientDashboard() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
-      const res = await fetch('/api/user/profile', { headers: { Authorization: `Bearer ${session.access_token}` } })
+      const res = await fetch('/api/client/profile', { headers: { Authorization: `Bearer ${session.access_token}` } })
       const data = await res.json()
       if (data.user) {
         setProfile(data.user)
@@ -77,7 +77,7 @@ export default function ClientDashboard() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
-      const res = await fetch('/api/user/profile', {
+      const res = await fetch('/api/client/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify(editProfile),
