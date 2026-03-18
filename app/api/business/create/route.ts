@@ -1,19 +1,19 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
-function getEmailFromToken(request: Request): string | null {
-  try {
-    const token = request.headers.get('Authorization')?.replace('Bearer ', '')
-    if (!token) return null
-    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString())
-    return payload.email || null
-  } catch { return null }
-}
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { businessName, category, city, size, hasBooking, acceptsWalkIns, ownerName, email } = body
+    const {
+      businessName, categoryId, categorySelections,
+      city, size, hasBooking, acceptsWalkIns, ownerName, email
+    } = body
+
+    if (!email || !businessName || !city) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
 
     // Create slug from business name
     const baseSlug = businessName
@@ -24,15 +24,16 @@ export async function POST(request: Request) {
     const existing = await prisma.business.findUnique({ where: { slug: baseSlug } })
     const finalSlug = existing ? `${baseSlug}-${Date.now()}` : baseSlug
 
-    // Find or create user in our DB
+    // Find or create user in DB
     let dbUser = await prisma.user.findUnique({ where: { email } })
     if (!dbUser) {
       dbUser = await prisma.user.create({
-        data: {
-          email,
-          fullName: ownerName,
-          role: 'BUSINESS_OWNER',
-        }
+        data: { email, fullName: ownerName || email, role: 'BUSINESS_OWNER' }
+      })
+    } else if (dbUser.role !== 'BUSINESS_OWNER') {
+      await prisma.user.update({
+        where: { email },
+        data: { role: 'BUSINESS_OWNER' }
       })
     }
 
@@ -50,20 +51,34 @@ export async function POST(request: Request) {
         ownerId: dbUser.id,
         name: businessName,
         slug: finalSlug,
-        category: category.toUpperCase().replace(/-/g, '_') as never,
+        categoryId: categoryId || null,
         city,
         province: 'ON',
-        size: size as never,
-        hasBooking,
-        acceptsWalkIns,
+        size: (size as 'SOLO' | 'TEAM') || 'SOLO',
+        hasBooking: hasBooking ?? true,
+        acceptsWalkIns: acceptsWalkIns ?? false,
         isApproved: true,
         isActive: true,
       }
     })
 
-    return NextResponse.json({ business, slug: finalSlug })
+    // Save all category selections to BusinessCategory join table
+    if (categorySelections?.length > 0) {
+      const validSelections = categorySelections.filter((s: any) => s.categoryId)
+      await prisma.businessCategory.createMany({
+        data: validSelections.map((s: any, i: number) => ({
+          businessId: business.id,
+          categoryId: s.categoryId,
+          subcategoryId: s.subcategoryId || null,
+          isPrimary: i === 0,
+        })),
+        skipDuplicates: true,
+      })
+    }
+
+    return NextResponse.json({ success: true, business, slug: finalSlug })
   } catch (error) {
-    console.error(error)
+    console.error('Business create error:', error)
     return NextResponse.json({ error: 'Failed to create business' }, { status: 500 })
   }
 }
