@@ -17,7 +17,7 @@ function CategoryCard({ cat, i, hoveredCat, setHoveredCat }: {
       href={`/browse/${cat.slug}`}
       style={{
         position: 'relative', borderRadius: '1rem', overflow: 'hidden',
-        textDecoration: 'none', display: 'block', aspectRatio: '1 / 1',
+        textDecoration: 'none', display: 'block', aspectRatio: '4 / 3',
         border: hoveredCat === cat.slug ? '2px solid #c9933a' : '2px solid transparent',
         transform: hoveredCat === cat.slug ? 'scale(1.04)' : 'scale(1)',
         transition: 'all 0.3s ease',
@@ -185,7 +185,7 @@ export default function HomePage() {
           .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
         @media (max-width: 480px) {
-          .cat-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .cat-grid { grid-template-columns: repeat(3, 1fr) !important; }
           .search-row { flex-direction: column !important; }
           .search-row select { width: 100% !important; }
         }

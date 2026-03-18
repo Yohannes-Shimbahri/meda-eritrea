@@ -270,7 +270,7 @@ function CategoryBrowseContent() {
                 <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '1.25rem', overflow: 'hidden', transition: 'all 0.3s', cursor: 'pointer', height: '100%' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = '#c9933a'; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(201,147,58,0.15)' }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = '#222'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
-                  <div style={{ height: '160px', position: 'relative', overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
+                  <div className="biz-card-img" style={{ height: '160px', position: 'relative', overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
                     {biz.coverImage
                       ? <Image src={biz.coverImage} alt={biz.name} fill style={{ objectFit: 'cover' }} />
                       : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>{category.icon}</div>
@@ -306,6 +306,7 @@ function CategoryBrowseContent() {
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         ::-webkit-scrollbar { display: none; }
         @media (max-width: 768px) {
+          .biz-card-img { height: 110px !important; }
           .biz-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
       `}</style>
