@@ -4,6 +4,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useLanguage } from '@/lib/i18n'
+import { LanguageToggle } from '@/components/LanguageToggle'
 
 const cities = ['All Cities', 'Toronto', 'Calgary', 'Edmonton', 'Ottawa', 'Vancouver', 'Montreal']
 
@@ -49,6 +51,8 @@ function getCategoryEmoji(name: string) {
 
 function CategoryBrowseContent() {
   const params = useParams()
+  const { t, isRTL } = useLanguage()
+
   const categorySlug = params?.category as string
 
   const [category, setCategory] = useState<Category | null>(null)
@@ -133,12 +137,12 @@ function CategoryBrowseContent() {
   }
 
   const tabs = [
-    { slug: 'all', name: 'All' },
+    { slug: 'all', name: t.browse.all },
     ...category.subcategories.map(s => ({ slug: s.slug, name: s.name })),
   ]
 
   return (
-    <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', color: '#f5f0e8', fontFamily: 'system-ui, sans-serif' }}>
+    <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', color: '#f5f0e8', fontFamily: 'system-ui, sans-serif' }}dir={isRTL ? 'rtl' : 'ltr'}>
 
       {/* NAVBAR */}
       <nav style={{ borderBottom: '1px solid #1a1a1a', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 200, backgroundColor: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)' }}>
@@ -199,9 +203,9 @@ function CategoryBrowseContent() {
               </select>
               <select value={sortBy} onChange={e => setSortBy(e.target.value)}
                 style={{ background: '#111', border: '1px solid #222', borderRadius: '0.65rem', padding: '0.55rem 0.75rem', color: '#f5f0e8', fontSize: '0.85rem', outline: 'none' }}>
-                <option value="featured">Featured First</option>
-                <option value="rating">Top Rated</option>
-                <option value="reviews">Most Reviewed</option>
+                <option value="featured">{t.browse.featured_first}</option>
+                <option value="rating">{t.browse.top_rated}</option>
+                <option value="reviews">{t.browse.most_reviewed}</option>
               </select>
             </div>
           </div>
@@ -293,7 +297,7 @@ function CategoryBrowseContent() {
                       <span style={{ color: '#888', fontSize: '0.78rem' }}>{category.icon} {category.name}</span>
                       <span style={{ color: '#888', fontSize: '0.78rem' }}>📍 {biz.city}</span>
                     </div>
-                    <div style={{ padding: '0.5rem 1rem', backgroundColor: '#c9933a', borderRadius: '0.625rem', textAlign: 'center', fontWeight: '700', fontSize: '0.82rem', color: '#0a0a0a' }}>View Profile</div>
+                    <div style={{ padding: '0.5rem 1rem', backgroundColor: '#c9933a', borderRadius: '0.625rem', textAlign: 'center', fontWeight: '700', fontSize: '0.82rem', color: '#0a0a0a' }}>{t.browse.view_profile}</div>
                   </div>
                 </div>
               </Link>

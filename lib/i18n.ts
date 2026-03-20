@@ -24,7 +24,7 @@ const translations: Record<Language, any> = {
       footer: '© 2025 Meda. Built for the Habesha community in Canada.',
     },
     browse: {
-      title: 'Browse Habesha Businesses',
+      title: '{t.browse.title}',
       search_placeholder: 'Search businesses...',
       all: 'All',
       no_businesses: 'No businesses found',
