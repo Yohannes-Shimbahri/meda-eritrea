@@ -4,6 +4,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useLanguage } from '@/lib/i18n'
+import { LanguageToggle } from '@/components/LanguageToggle'
 
 const cities = ['All Cities', 'Toronto', 'Calgary', 'Edmonton', 'Ottawa', 'Vancouver', 'Montreal']
 
@@ -16,18 +18,6 @@ const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
   Montreal: { lat: 45.5017, lng: -73.5673 },
   'All Cities': { lat: 56.1304, lng: -106.3468 },
 }
-
-const sampleBusinesses = [
-  { id: 1, name: 'Selam Hair Studio', category: 'Hair Styling', city: 'Toronto', rating: 4.8, reviewCount: 24, coverImage: '/categories/hair-styling.jpg', slug: 'selam-hair-studio', subscription: 'PRO', isVerified: true },
-  { id: 2, name: 'Meron Makeup', category: 'Makeup', city: 'Calgary', rating: 4.9, reviewCount: 18, coverImage: '/categories/makeup.jpg', slug: 'meron-makeup', subscription: 'STANDARD', isVerified: true },
-  { id: 3, name: 'Habesha Cuts', category: 'Barber', city: 'Edmonton', rating: 4.7, reviewCount: 41, coverImage: '/categories/barber.jpg', slug: 'habesha-cuts', subscription: 'PRO', isVerified: true },
-  { id: 4, name: 'Injera Catering Co.', category: 'Catering', city: 'Toronto', rating: 4.6, reviewCount: 12, coverImage: '/categories/catering.jpg', slug: 'injera-catering', subscription: 'STANDARD', isVerified: false },
-  { id: 5, name: 'Lens by Dawit', category: 'Cameraman', city: 'Ottawa', rating: 5.0, reviewCount: 8, coverImage: '/categories/cameraman.jpg', slug: 'lens-by-dawit', subscription: 'PRO', isVerified: true },
-  { id: 6, name: 'Habesha Decor', category: 'Event Decoration', city: 'Vancouver', rating: 4.5, reviewCount: 15, coverImage: '/categories/event-decoration.jpg', slug: 'habesha-decor', subscription: 'FREE', isVerified: false },
-  { id: 7, name: 'Ethio Auto Sales', category: 'Car Sales', city: 'Toronto', rating: 4.3, reviewCount: 9, coverImage: '/categories/car-sales.jpg', slug: 'ethio-auto', subscription: 'STANDARD', isVerified: false },
-  { id: 8, name: 'Hana Bakery', category: 'Baker', city: 'Calgary', rating: 4.9, reviewCount: 33, coverImage: '/categories/baker.jpg', slug: 'hana-bakery', subscription: 'PRO', isVerified: true },
-  { id: 9, name: 'Fix It Fast', category: 'Handy Services', city: 'Edmonton', rating: 4.4, reviewCount: 7, coverImage: '/categories/handy-services.jpg', slug: 'fix-it-fast', subscription: 'FREE', isVerified: false },
-]
 
 type Business = {
   id: string | number
@@ -51,11 +41,8 @@ function getCatName(category: any): string {
 function getCategoryEmoji(category: any) {
   const name = getCatName(category)
   const map: Record<string, string> = {
-    HAIR_STYLING: '✂️', 'Hair Styling': '✂️', BARBER: '💈', Barber: '💈',
-    MAKEUP: '💄', Makeup: '💄', CATERING: '🍽️', Catering: '🍽️',
-    CAMERAMAN: '📸', Cameraman: '📸', BAKER: '🍞', Baker: '🍞',
-    CAR_SALES: '🚗', 'Car Sales': '🚗', EVENT_DECORATION: '🎊', 'Event Decoration': '🎊',
-    HANDY_SERVICES: '🔧', 'Handy Services': '🔧',
+    'Hair Styling': '✂️', 'Barber': '💈', 'Makeup': '💄', 'Catering': '🍽️',
+    'Cameraman': '📸', 'Baker': '🍞', 'Car Sales': '🚗', 'Event Decoration': '🎊', 'Handy Services': '🔧',
   }
   return map[name] || '🏪'
 }
@@ -114,7 +101,7 @@ function GoogleMap({ businesses, selectedId, onSelect, city }: { businesses: Bus
       })
       marker.addListener('click', () => {
         onSelect(biz.id)
-        infoWindowRef.current.setContent(`<div style="background:#111;color:#f5f0e8;padding:12px 16px;border-radius:10px;min-width:180px;font-family:sans-serif;border:1px solid #333;"><div style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">${biz.name}</div><div style="color:#888;font-size:0.8rem;margin-bottom:4px;">${getCatName(biz.category).replace(/_/g,' ')} · ${biz.city}</div>${biz.rating ? `<div style="color:#f5c842;font-size:0.8rem;">★ ${biz.rating} (${biz.reviewCount})</div>` : '<div style="color:#555;font-size:0.8rem;">New listing</div>'}<a href="/business/${biz.slug}" style="display:block;margin-top:8px;background:#c9933a;color:#0a0a0a;padding:5px 10px;border-radius:6px;text-align:center;font-weight:700;font-size:0.8rem;text-decoration:none;">View Profile →</a></div>`)
+        infoWindowRef.current.setContent(`<div style="background:#111;color:#f5f0e8;padding:12px 16px;border-radius:10px;min-width:180px;font-family:sans-serif;border:1px solid #333;"><div style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">${biz.name}</div><div style="color:#888;font-size:0.8rem;margin-bottom:4px;">${getCatName(biz.category).replace(/_/g,' ')} · ${biz.city}</div>${biz.rating ? `<div style="color:#f5c842;font-size:0.8rem;">★ ${biz.rating} (${biz.reviewCount})</div>` : '<div style="color:#555;font-size:0.8rem;">New listing</div>'}<a href="/business/${biz.slug}" style="display:block;margin-top:8px;background:#c9933a;color:#0a0a0a;padding:5px 10px;border-radius:6px;text-align:center;font-weight:700;font-size:0.8rem;text-decoration:none;">View →</a></div>`)
         infoWindowRef.current.open(mapInstanceRef.current, marker)
       })
       markersRef.current.push(marker)
@@ -162,7 +149,7 @@ function GoogleMap({ businesses, selectedId, onSelect, city }: { businesses: Bus
   }
 
   if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
-    return <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '0.5rem' }}><div style={{ fontSize: '2rem' }}>🗺️</div><p style={{ color: '#888', fontSize: '0.85rem', textAlign: 'center', padding: '0 2rem' }}>Add <code style={{ color: '#c9933a' }}>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> to .env.local</p></div>
+    return <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '0.5rem' }}><div style={{ fontSize: '2rem' }}>🗺️</div><p style={{ color: '#888', fontSize: '0.85rem', textAlign: 'center', padding: '0 2rem' }}>Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to .env.local</p></div>
   }
 
   return (
@@ -180,8 +167,23 @@ function BrowseContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
+
+  // ── i18n must be at the top before other hooks ──
+  const { t, isRTL } = useLanguage()
+
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
+  const [city, setCity] = useState('All Cities')
+  const [view, setView] = useState<'grid' | 'map'>('grid')
+  const [sortBy, setSortBy] = useState('featured')
+  const [businesses, setBusinesses] = useState<Business[]>([])
+  const [categories, setCategories] = useState<{ label: string; value: string }[]>([{ label: t.browse.all, value: '' }])
+  const [loadingData, setLoadingData] = useState(false)
+  const [usingRealData, setUsingRealData] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const [selectedId, setSelectedId] = useState<string | number | null>(null)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const cardRefs = useRef<Record<string | number, HTMLDivElement | null>>({})
 
   const changeCategory = (val: string) => {
     setCategory(val)
@@ -190,30 +192,20 @@ function BrowseContent() {
     else params.delete('category')
     router.replace(`${pathname}?${params.toString()}`, { scroll: false })
   }
-  const [city, setCity] = useState('All Cities')
-  const [view, setView] = useState<'grid' | 'map'>('grid')
-  const [sortBy, setSortBy] = useState('featured')
-  const [businesses, setBusinesses] = useState<Business[]>([])
-  const [categories, setCategories] = useState<{ label: string; value: string }[]>([{ label: 'All', value: '' }])
-  const [loadingData, setLoadingData] = useState(false)
-  const [usingRealData, setUsingRealData] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [selectedId, setSelectedId] = useState<string | number | null>(null)
-  const [filtersOpen, setFiltersOpen] = useState(false)
-  const cardRefs = useRef<Record<string | number, HTMLDivElement | null>>({})
 
   useEffect(() => {
-    fetch(`/api/admin/categories?t=${Date.now()}`, { cache: 'no-store' })      .then(r => r.json())
+    fetch(`/api/admin/categories?t=${Date.now()}`, { cache: 'no-store' })
+      .then(r => r.json())
       .then(data => {
         if (data.categories?.length) {
           setCategories([
-            { label: 'All', value: '' },
+            { label: t.browse.all, value: '' },
             ...data.categories.map((c: any) => ({ label: c.name, value: c.slug }))
           ])
         }
       })
       .catch(() => {})
-  }, [])
+  }, [t])
 
   useEffect(() => {
     const cat = searchParams.get('category')
@@ -238,8 +230,8 @@ function BrowseContent() {
         else if (data.businesses && data.businesses.length === 0 && usingRealData) setBusinesses([])
       } catch { } finally { setLoadingData(false) }
     }
-    const t = setTimeout(fetchBusinesses, 300)
-    return () => clearTimeout(t)
+    const timer = setTimeout(fetchBusinesses, 300)
+    return () => clearTimeout(timer)
   }, [search, category, city])
 
   const filtered = businesses
@@ -267,24 +259,25 @@ function BrowseContent() {
   const dashboardHref = user?.user_metadata?.role === 'BUSINESS_OWNER' ? '/business/dashboard' : '/dashboard'
 
   return (
-    <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', color: '#f5f0e8', display: 'flex', flexDirection: 'column' }}>
+    <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', color: '#f5f0e8', display: 'flex', flexDirection: 'column' }} dir={isRTL ? 'rtl' : 'ltr'}>
 
       {/* NAVBAR */}
       <nav style={{ borderBottom: '1px solid #222', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 200, backgroundColor: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)' }}>
         <Link href="/" style={{ fontSize: '1.5rem', fontWeight: '800', color: '#c9933a', textDecoration: 'none' }}>Meda</Link>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <LanguageToggle />
           {user ? (
             <>
-              <Link href={dashboardHref} className="hide-mobile" style={{ color: '#888', fontSize: '0.9rem', textDecoration: 'none' }}>My Dashboard</Link>
-              <button onClick={async () => { await supabase.auth.signOut(); window.location.href = '/' }} className="hide-mobile" style={{ background: 'none', border: '1px solid #333', color: '#888', padding: '0.5rem 1rem', borderRadius: '0.75rem', cursor: 'pointer', fontSize: '0.9rem' }}>Sign Out</button>
+              <Link href={dashboardHref} className="hide-mobile" style={{ color: '#888', fontSize: '0.9rem', textDecoration: 'none' }}>{t.nav.dashboard}</Link>
+              <button onClick={async () => { await supabase.auth.signOut(); window.location.href = '/' }} className="hide-mobile" style={{ background: 'none', border: '1px solid #333', color: '#888', padding: '0.5rem 1rem', borderRadius: '0.75rem', cursor: 'pointer', fontSize: '0.9rem' }}>{t.nav.signOut}</button>
               <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#c9933a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.9rem', color: '#0a0a0a', flexShrink: 0 }}>
                 {(user.user_metadata?.full_name || user.email || 'U').charAt(0).toUpperCase()}
               </div>
             </>
           ) : (
             <>
-              <Link href="/login" className="hide-mobile" style={{ color: '#888', fontSize: '0.9rem', textDecoration: 'none' }}>Login</Link>
-              <Link href="/register/client" style={{ backgroundColor: '#c9933a', color: '#0a0a0a', padding: '0.5rem 1rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '0.85rem', textDecoration: 'none', whiteSpace: 'nowrap' }}>Sign Up</Link>
+              <Link href="/login" className="hide-mobile" style={{ color: '#888', fontSize: '0.9rem', textDecoration: 'none' }}>{t.nav.login}</Link>
+              <Link href="/register/client" style={{ backgroundColor: '#c9933a', color: '#0a0a0a', padding: '0.5rem 1rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '0.85rem', textDecoration: 'none', whiteSpace: 'nowrap' }}>{t.nav.signUp}</Link>
             </>
           )}
         </div>
@@ -292,16 +285,15 @@ function BrowseContent() {
 
       {/* SEARCH HEADER */}
       <div style={{ backgroundColor: '#111', borderBottom: '1px solid #222', padding: '1rem' }}>
-        <h1 style={{ fontSize: 'clamp(1rem, 4vw, 1.5rem)', fontWeight: '800', marginBottom: '0.75rem' }}>Browse Habesha Businesses</h1>
+        <h1 style={{ fontSize: 'clamp(1rem, 4vw, 1.5rem)', fontWeight: '800', marginBottom: '0.75rem' }}>{t.browse.title}</h1>
 
-        {/* Search + view toggle row */}
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search businesses..."
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={t.browse.search_placeholder}
             style={{ flex: 1, background: '#0a0a0a', border: '1px solid #333', borderRadius: '0.75rem', padding: '0.7rem 0.875rem', color: '#f5f0e8', fontSize: '0.9rem', outline: 'none', minWidth: 0 }}
             onFocus={e => (e.currentTarget.style.borderColor = '#c9933a')}
             onBlur={e => (e.currentTarget.style.borderColor = '#333')} />
           <button onClick={() => setFiltersOpen(!filtersOpen)} className="mobile-filter-btn" style={{ display: 'none', backgroundColor: filtersOpen ? '#c9933a' : '#0a0a0a', border: '1px solid #333', borderRadius: '0.75rem', padding: '0.7rem 0.875rem', color: filtersOpen ? '#0a0a0a' : '#888', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
-            ⚙ Filter
+            ⚙ {t.browse.filter}
           </button>
           <div style={{ display: 'flex', backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '0.75rem', overflow: 'hidden', flexShrink: 0 }}>
             <button onClick={() => setView('grid')} style={{ padding: '0.7rem 0.875rem', border: 'none', cursor: 'pointer', backgroundColor: view === 'grid' ? '#c9933a' : 'transparent', color: view === 'grid' ? '#0a0a0a' : '#888', fontWeight: '600', fontSize: '0.85rem' }}>⊞</button>
@@ -318,9 +310,9 @@ function BrowseContent() {
             {cities.map(c => <option key={c}>{c}</option>)}
           </select>
           <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ background: '#0a0a0a', border: '1px solid #333', borderRadius: '0.75rem', padding: '0.65rem 1rem', color: '#f5f0e8', fontSize: '0.85rem', outline: 'none' }}>
-            <option value="featured">Featured First</option>
-            <option value="rating">Top Rated</option>
-            <option value="reviews">Most Reviewed</option>
+            <option value="featured">{t.browse.featured_first}</option>
+            <option value="rating">{t.browse.top_rated}</option>
+            <option value="reviews">{t.browse.most_reviewed}</option>
           </select>
         </div>
 
@@ -334,9 +326,9 @@ function BrowseContent() {
               {cities.map(c => <option key={c}>{c}</option>)}
             </select>
             <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ background: '#111', border: '1px solid #333', borderRadius: '0.5rem', padding: '0.6rem 0.75rem', color: '#f5f0e8', fontSize: '0.85rem', outline: 'none', gridColumn: '1/-1' }}>
-              <option value="featured">Featured First</option>
-              <option value="rating">Top Rated</option>
-              <option value="reviews">Most Reviewed</option>
+              <option value="featured">{t.browse.featured_first}</option>
+              <option value="rating">{t.browse.top_rated}</option>
+              <option value="reviews">{t.browse.most_reviewed}</option>
             </select>
           </div>
         )}
@@ -354,9 +346,9 @@ function BrowseContent() {
       {/* RESULTS COUNT */}
       <div style={{ padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <p style={{ color: '#888', fontSize: '0.82rem', margin: 0 }}>
-          {loadingData ? 'Searching...' : <><span style={{ color: '#f5f0e8', fontWeight: '700' }}>{filtered.length}</span> businesses found{city !== 'All Cities' && <> in <span style={{ color: '#c9933a' }}>{city}</span></>}{category && <> · <span style={{ color: '#c9933a' }}>{categories.find(c => c.value === category)?.label}</span></>}{!usingRealData && <span style={{ color: '#555' }}> · sample</span>}</>}
+          {loadingData ? 'Searching...' : <><span style={{ color: '#f5f0e8', fontWeight: '700' }}>{filtered.length}</span> {t.browse.businesses_found}{city !== 'All Cities' && <> in <span style={{ color: '#c9933a' }}>{city}</span></>}{category && <> · <span style={{ color: '#c9933a' }}>{categories.find(c => c.value === category)?.label}</span></>}{!usingRealData && <span style={{ color: '#555' }}> · sample</span>}</>}
         </p>
-        {category && <button onClick={() => changeCategory('')} style={{ background: 'none', border: '1px solid #333', color: '#888', padding: '0.3rem 0.65rem', borderRadius: '1rem', cursor: 'pointer', fontSize: '0.78rem' }}>✕ Clear</button>}
+        {category && <button onClick={() => changeCategory('')} style={{ background: 'none', border: '1px solid #333', color: '#888', padding: '0.3rem 0.65rem', borderRadius: '1rem', cursor: 'pointer', fontSize: '0.78rem' }}>✕ {t.browse.clear}</button>}
       </div>
 
       {/* GRID VIEW */}
@@ -377,8 +369,8 @@ function BrowseContent() {
             ) : filtered.length === 0 ? (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem 0' }}>
                 <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-                <h3 style={{ fontWeight: '700', marginBottom: '0.5rem' }}>No businesses found</h3>
-                <p style={{ color: '#888' }}>Try adjusting your search or filters</p>
+                <h3 style={{ fontWeight: '700', marginBottom: '0.5rem' }}>{t.browse.no_businesses}</h3>
+                <p style={{ color: '#888' }}>{t.browse.no_businesses_sub}</p>
               </div>
             ) : filtered.map((business, i) => (
               <Link key={business.id} href={`/business/${business.slug}`} style={{ textDecoration: 'none', color: '#f5f0e8', animation: `fadeInUp 0.4s ease ${i * 0.05}s both` }}>
@@ -390,7 +382,7 @@ function BrowseContent() {
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)' }} />
                     <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', display: 'flex', gap: '0.4rem' }}>
                       {business.subscription === 'PRO' && <span style={{ backgroundColor: '#c9933a', color: '#0a0a0a', padding: '0.2rem 0.5rem', borderRadius: '1rem', fontSize: '0.65rem', fontWeight: '800' }}>⭐ PRO</span>}
-                      {business.isVerified && <span style={{ backgroundColor: 'rgba(0,0,0,0.7)', color: '#4ade80', padding: '0.2rem 0.5rem', borderRadius: '1rem', fontSize: '0.65rem', fontWeight: '700' }}>✓ Verified</span>}
+                      {business.isVerified && <span style={{ backgroundColor: 'rgba(0,0,0,0.7)', color: '#4ade80', padding: '0.2rem 0.5rem', borderRadius: '1rem', fontSize: '0.65rem', fontWeight: '700' }}>{t.business.verified}</span>}
                     </div>
                   </div>
                   <div style={{ padding: '0.875rem' }}>
@@ -402,13 +394,13 @@ function BrowseContent() {
                           <span style={{ fontWeight: '700', fontSize: '0.8rem' }}>{business.rating}</span>
                           <span style={{ color: '#888', fontSize: '0.75rem' }}>({business.reviewCount})</span>
                         </div>
-                      ) : <span style={{ color: '#555', fontSize: '0.75rem', flexShrink: 0 }}>New</span>}
+                      ) : <span style={{ color: '#555', fontSize: '0.75rem', flexShrink: 0 }}>{t.business.new_listing}</span>}
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                       <span style={{ color: '#888', fontSize: '0.78rem' }}>{getCategoryEmoji(typeof business.category === 'object' ? business.category?.name : business.category)} {(typeof business.category === 'object' ? business.category?.name : business.category)?.replace(/_/g, ' ') ?? ''}</span>
                       <span style={{ color: '#888', fontSize: '0.78rem' }}>📍 {business.city}</span>
                     </div>
-                    <div style={{ padding: '0.5rem 1rem', backgroundColor: '#c9933a', borderRadius: '0.625rem', textAlign: 'center', fontWeight: '700', fontSize: '0.82rem', color: '#0a0a0a' }}>View Profile</div>
+                    <div style={{ padding: '0.5rem 1rem', backgroundColor: '#c9933a', borderRadius: '0.625rem', textAlign: 'center', fontWeight: '700', fontSize: '0.82rem', color: '#0a0a0a' }}>{t.browse.view_profile}</div>
                   </div>
                 </div>
               </Link>
@@ -423,7 +415,7 @@ function BrowseContent() {
           <div className="map-list" style={{ width: '320px', flexShrink: 0, overflowY: 'auto', borderRight: '1px solid #222', backgroundColor: '#080808' }}>
             <div style={{ padding: '0.75rem' }}>
               {filtered.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#888' }}><div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔍</div><p style={{ fontSize: '0.9rem' }}>No businesses found</p></div>
+                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#888' }}><div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔍</div><p style={{ fontSize: '0.9rem' }}>{t.browse.no_businesses}</p></div>
               ) : filtered.map(biz => (
                 <div key={biz.id} ref={el => { cardRefs.current[biz.id] = el }}
                   onClick={() => setSelectedId(biz.id)}
@@ -439,7 +431,7 @@ function BrowseContent() {
                       </div>
                       <div style={{ color: '#666', fontSize: '0.75rem', marginBottom: '0.35rem' }}>{getCatName(biz.category).replace(/_/g, ' ')} · 📍 {biz.city}</div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        {biz.rating ? <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}><span style={{ color: '#f5c842', fontSize: '0.75rem' }}>★</span><span style={{ fontWeight: '700', fontSize: '0.75rem' }}>{biz.rating}</span></div> : <span style={{ color: '#444', fontSize: '0.7rem' }}>New</span>}
+                        {biz.rating ? <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}><span style={{ color: '#f5c842', fontSize: '0.75rem' }}>★</span><span style={{ fontWeight: '700', fontSize: '0.75rem' }}>{biz.rating}</span></div> : <span style={{ color: '#444', fontSize: '0.7rem' }}>{t.business.new_listing}</span>}
                         <Link href={`/business/${biz.slug}`} onClick={e => e.stopPropagation()} style={{ backgroundColor: '#c9933a', color: '#0a0a0a', padding: '0.25rem 0.6rem', borderRadius: '0.4rem', fontSize: '0.7rem', fontWeight: '700', textDecoration: 'none' }}>View →</Link>
                       </div>
                     </div>
@@ -457,19 +449,16 @@ function BrowseContent() {
       <style>{`
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
         @media (max-width: 768px) {
           .hide-mobile { display: none !important; }
           .desktop-filters { display: none !important; }
           .mobile-filter-btn { display: flex !important; }
           .biz-grid { grid-template-columns: repeat(2, 1fr) !important; min-width: 0 !important; gap: 0.5rem !important; }
           .biz-card img, .biz-card > div:first-child { height: 95px !important; }
-          
           .map-container { flex-direction: column !important; height: auto !important; }
           .map-list { width: 100% !important; max-height: 260px !important; border-right: none !important; border-bottom: 1px solid #222 !important; }
           .map-container > div:last-child { height: 50vh !important; min-height: 300px !important; }
         }
-
         @media (max-width: 480px) {
           .biz-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
@@ -479,9 +468,5 @@ function BrowseContent() {
 }
 
 export default function BrowsePage() {
-  return (
-    <Suspense fallback={null}>
-      <BrowseContent />
-    </Suspense>
-  )
+  return <Suspense fallback={null}><BrowseContent /></Suspense>
 }
