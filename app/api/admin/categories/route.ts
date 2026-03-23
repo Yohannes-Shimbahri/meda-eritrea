@@ -4,6 +4,10 @@ import { v2 as cloudinary } from 'cloudinary'
 
 export const dynamic = 'force-dynamic'
 
+export const config = {
+  api: { bodyParser: { sizeLimit: '10mb' } }
+}
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -28,17 +32,16 @@ async function uploadImage(base64: string, slug: string): Promise<string> {
     folder: `meda/categories`,
     public_id: slug,
     overwrite: true,
-    transformation: [{ width: 400, height: 400, crop: 'fill', quality: 'auto', format: 'webp' }],
+    transformation: [{ width: 600, height: 400, crop: 'fill', quality: 'auto:low', format: 'webp' }],
   })
   return result.secure_url
 }
 
 // GET — public
-// Returns parent categories with their subcategories nested
 export async function GET() {
   try {
     const categories = await (prisma as any).category.findMany({
-      where: { isActive: true, parentId: null }, // top-level only
+      where: { isActive: true, parentId: null },
       orderBy: [{ order: 'asc' }, { name: 'asc' }],
       include: {
         _count: { select: { businesses: true } },
@@ -50,18 +53,18 @@ export async function GET() {
       },
     })
     return NextResponse.json({ categories }, {
-    headers: {
-      'Cache-Control': 'no-store, no-cache, must-revalidate',
-      'CDN-Cache-Control': 'no-store',
-    }
-  })
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'CDN-Cache-Control': 'no-store',
+      }
+    })
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 })
   }
 }
 
-// POST — admin only, create category or subcategory
+// POST — admin only
 export async function POST(req: NextRequest) {
   try {
     const email = getEmailFromToken(req)
@@ -81,13 +84,12 @@ export async function POST(req: NextRequest) {
 
     const category = await (prisma as any).category.create({
       data: {
-        name,
-        slug,
+        name, slug,
         icon: icon || '🏢',
         description: description || null,
         order: order ?? 0,
         imageUrl: imageUrl ?? null,
-        parentId: parentId || null, // null = top-level, string = subcategory
+        parentId: parentId || null,
       },
     })
     return NextResponse.json({ success: true, category })
@@ -98,7 +100,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PATCH — admin only, update
+// PATCH — admin only
 export async function PATCH(req: NextRequest) {
   try {
     const email = getEmailFromToken(req)
@@ -141,12 +143,10 @@ export async function DELETE(req: NextRequest) {
     const { id } = await req.json()
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
-    // Check businesses using this category or subcategory
     const bizCount = await (prisma as any).business.count({ where: { categoryId: id } })
     const subBizCount = await (prisma as any).business.count({ where: { subcategoryId: id } })
     if (bizCount + subBizCount > 0) return NextResponse.json({ error: `Cannot delete — ${bizCount + subBizCount} business(es) use this category` }, { status: 400 })
 
-    // Delete subcategories first if this is a parent
     await (prisma as any).category.deleteMany({ where: { parentId: id } })
     await (prisma as any).category.delete({ where: { id } })
     return NextResponse.json({ success: true })
