@@ -478,6 +478,7 @@ export default function BusinessDashboard() {
   const [currentPlan, setCurrentPlan] = useState('FREE')
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
 
   const [dashServices, setDashServices] = useState<{ id: number; name: string; price: string; duration: string; photo: string | null }[]>([])
   const [dashEmployees, setDashEmployees] = useState<{ id: number; name: string; specialty: string; bio: string; photo: string | null }[]>([])
@@ -546,6 +547,9 @@ export default function BusinessDashboard() {
           const todayStr = new Date().toDateString()
           setBookingStats({ total: data.bookings.length, today: data.bookings.filter((b: any) => new Date(b.date).toDateString() === todayStr).length, pending: data.bookings.filter((b: any) => b.status === 'PENDING').length })
         }
+      }).catch(() => {})
+      fetch('/api/notifications', { headers }).then(r => r.json()).then(data => {
+        if (data.unreadCount) setUnreadCount(data.unreadCount)
       }).catch(() => {})
     }
     loadData()
@@ -640,6 +644,15 @@ export default function BusinessDashboard() {
           )}
           <Link href="/business/preview" className="hide-mobile" style={{ border: '1px solid #333', color: '#888', padding: '0.5rem 1rem', borderRadius: '0.75rem', textDecoration: 'none', fontSize: '0.85rem' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#c9933a')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#333')}>👁 Preview</Link>
           <button onClick={async () => { await supabase.auth.signOut(); window.location.href = '/' }} className="hide-mobile" style={{ background: 'none', border: '1px solid #333', color: '#888', padding: '0.5rem 1rem', borderRadius: '0.75rem', cursor: 'pointer', fontSize: '0.85rem' }}>Sign Out</button>
+          <Link href="/notifications" style={{ position: 'relative', color: '#888', textDecoration: 'none', fontSize: '1.2rem' }}>
+            🔔
+            {unreadCount > 0 && (
+              <span style={{ position: 'absolute', top: '-6px', right: '-8px', backgroundColor: '#c9933a', color: '#0a0a0a', borderRadius: '50%', width: '16px', height: '16px', fontSize: '0.6rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </Link>
+          
           <div style={{ width: '34px', height: '34px', borderRadius: '50%', backgroundColor: '#c9933a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.85rem', color: '#0a0a0a', flexShrink: 0 }}>{ownerName.charAt(0).toUpperCase()}</div>
         </div>
       </nav>

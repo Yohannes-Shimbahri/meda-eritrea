@@ -41,20 +41,48 @@ export async function POST(req: NextRequest) {
       }
     })
 
-    // Fetch full details for email
+    // Fetch full details
     const fullBooking = await prisma.booking.findUnique({
       where: { id: booking.id },
       include: {
-        business: { select: { name: true, email: true, owner: { select: { email: true } } } },
+        business: { select: { name: true, email: true, ownerId: true, owner: { select: { email: true, id: true } } } },
         service: { select: { name: true, price: true } },
         employee: { select: { name: true } },
       }
     })
 
-    // Send email to business owner
+    const bookingDate = new Date(date).toLocaleDateString('en-CA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    const serviceName = fullBooking?.service?.name || 'Not specified'
+
+    // ── Create notification for business owner ──
+    if (fullBooking?.business?.owner?.id) {
+      await prisma.notification.create({
+        data: {
+          userId: fullBooking.business.owner.id,
+          businessId,
+          type: 'NEW_BOOKING',
+          title: 'New Booking Request',
+          body: `${client.fullName} requested ${serviceName} on ${bookingDate} at ${startTime}.`,
+          isRead: false,
+        }
+      }).catch(err => console.error('[notification create]', err))
+    }
+
+    // ── Create notification for client ──
+    await prisma.notification.create({
+      data: {
+        userId: client.id,
+        businessId,
+        type: 'BOOKING_CONFIRMED',
+        title: 'Booking Request Sent',
+        body: `Your booking request for ${serviceName} at ${fullBooking?.business?.name} on ${bookingDate} at ${startTime} has been sent.`,
+        isRead: false,
+      }
+    }).catch(err => console.error('[notification create]', err))
+
+    // ── Send email to business owner ──
     const businessEmail = fullBooking?.business?.owner?.email || fullBooking?.business?.email
     if (businessEmail) {
-      const bookingDate = new Date(date).toLocaleDateString('en-CA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
       await resend.emails.send({
         from: FROM,
         to: businessEmail,
@@ -69,7 +97,7 @@ export async function POST(req: NextRequest) {
               <table style="width: 100%; border-collapse: collapse;">
                 <tr><td style="padding: 10px 0; color: #888; font-size: 14px; border-bottom: 1px solid #222;">Client</td><td style="padding: 10px 0; font-weight: 600; border-bottom: 1px solid #222;">${client.fullName}</td></tr>
                 <tr><td style="padding: 10px 0; color: #888; font-size: 14px; border-bottom: 1px solid #222;">Email</td><td style="padding: 10px 0; border-bottom: 1px solid #222;">${client.email}</td></tr>
-                <tr><td style="padding: 10px 0; color: #888; font-size: 14px; border-bottom: 1px solid #222;">Service</td><td style="padding: 10px 0; font-weight: 600; border-bottom: 1px solid #222;">${fullBooking?.service?.name || 'Not specified'}${fullBooking?.service?.price ? ` — $${fullBooking.service.price}` : ''}</td></tr>
+                <tr><td style="padding: 10px 0; color: #888; font-size: 14px; border-bottom: 1px solid #222;">Service</td><td style="padding: 10px 0; font-weight: 600; border-bottom: 1px solid #222;">${serviceName}${fullBooking?.service?.price ? ` — $${fullBooking.service.price}` : ''}</td></tr>
                 <tr><td style="padding: 10px 0; color: #888; font-size: 14px; border-bottom: 1px solid #222;">Date</td><td style="padding: 10px 0; border-bottom: 1px solid #222;">${bookingDate}</td></tr>
                 <tr><td style="padding: 10px 0; color: #888; font-size: 14px; border-bottom: 1px solid #222;">Time</td><td style="padding: 10px 0; font-weight: 600; color: #c9933a; border-bottom: 1px solid #222;">${startTime}</td></tr>
                 ${fullBooking?.employee ? `<tr><td style="padding: 10px 0; color: #888; font-size: 14px; border-bottom: 1px solid #222;">Staff</td><td style="padding: 10px 0; border-bottom: 1px solid #222;">${fullBooking.employee.name}</td></tr>` : ''}
@@ -85,7 +113,7 @@ export async function POST(req: NextRequest) {
       }).catch(err => console.error('[resend business email]', err))
     }
 
-    // Send confirmation email to client
+    // ── Send confirmation email to client ──
     await resend.emails.send({
       from: FROM,
       to: client.email,
@@ -100,8 +128,8 @@ export async function POST(req: NextRequest) {
             <p style="color: #888; font-size: 14px; margin: 0 0 24px;">Your booking request has been sent to <strong style="color: #f5f0e8;">${fullBooking?.business?.name}</strong>. They will confirm shortly.</p>
             <table style="width: 100%; border-collapse: collapse;">
               <tr><td style="padding: 10px 0; color: #888; font-size: 14px; border-bottom: 1px solid #222;">Business</td><td style="padding: 10px 0; font-weight: 600; border-bottom: 1px solid #222;">${fullBooking?.business?.name}</td></tr>
-              <tr><td style="padding: 10px 0; color: #888; font-size: 14px; border-bottom: 1px solid #222;">Service</td><td style="padding: 10px 0; border-bottom: 1px solid #222;">${fullBooking?.service?.name || 'Not specified'}</td></tr>
-              <tr><td style="padding: 10px 0; color: #888; font-size: 14px; border-bottom: 1px solid #222;">Date</td><td style="padding: 10px 0; border-bottom: 1px solid #222;">${new Date(date).toLocaleDateString('en-CA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td></tr>
+              <tr><td style="padding: 10px 0; color: #888; font-size: 14px; border-bottom: 1px solid #222;">Service</td><td style="padding: 10px 0; border-bottom: 1px solid #222;">${serviceName}</td></tr>
+              <tr><td style="padding: 10px 0; color: #888; font-size: 14px; border-bottom: 1px solid #222;">Date</td><td style="padding: 10px 0; border-bottom: 1px solid #222;">${bookingDate}</td></tr>
               <tr><td style="padding: 10px 0; color: #888; font-size: 14px;">Time</td><td style="padding: 10px 0; font-weight: 600; color: #c9933a;">${startTime}</td></tr>
             </table>
             <p style="margin-top: 24px; font-size: 13px; color: #555;">You'll receive another email once the business confirms your booking.</p>

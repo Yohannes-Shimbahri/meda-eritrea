@@ -17,6 +17,7 @@ export default function ClientDashboard() {
   const [editProfile, setEditProfile] = useState({ fullName: '', phone: '', preferredLanguage: 'en' })
   const [savingProfile, setSavingProfile] = useState(false)
   const [profileMsg, setProfileMsg] = useState('')
+  const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
     const init = async () => {
@@ -27,7 +28,12 @@ export default function ClientDashboard() {
       const res = await fetch('/api/bookings/my', { headers: { Authorization: `Bearer ${session.access_token}` } })
       const data = await res.json()
       if (data.bookings) setBookings(data.bookings)
-    }
+      const notifRes = await fetch('/api/notifications', {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      })
+      const notifData = await notifRes.json()
+      if (notifData.unreadCount) setUnreadCount(notifData.unreadCount)  
+          }
     init()
   }, [])
 
@@ -117,6 +123,14 @@ export default function ClientDashboard() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <Link href="/browse" className="hide-mobile" style={{ color: '#888', fontSize: '0.9rem', textDecoration: 'none' }}>Browse</Link>
           <button onClick={async () => { await supabase.auth.signOut(); window.location.href = '/' }} className="hide-mobile" style={{ background: 'none', border: '1px solid #333', color: '#888', padding: '0.5rem 1rem', borderRadius: '0.75rem', cursor: 'pointer', fontSize: '0.9rem' }}>Sign Out</button>
+          <Link href="/notifications" style={{ position: 'relative', color: '#888', textDecoration: 'none', fontSize: '1.2rem' }}>
+            🔔
+            {unreadCount > 0 && (
+              <span style={{ position: 'absolute', top: '-6px', right: '-8px', backgroundColor: '#c9933a', color: '#0a0a0a', borderRadius: '50%', width: '16px', height: '16px', fontSize: '0.6rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </Link>
           <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#c9933a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.9rem', color: '#0a0a0a', flexShrink: 0 }}>
             {name.charAt(0).toUpperCase()}
           </div>

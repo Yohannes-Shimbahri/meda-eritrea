@@ -26,8 +26,8 @@ export async function POST(req: NextRequest) {
     const existing = await prisma.review.findFirst({
       where: { businessId, clientId: dbUser.id }
     })
+
     if (existing) {
-      // Update existing review
       const updated = await prisma.review.update({
         where: { id: existing.id },
         data: { rating, comment },
@@ -44,9 +44,25 @@ export async function POST(req: NextRequest) {
         comment: comment || null,
       },
       include: {
-        client: { select: { fullName: true } }
+        client: { select: { fullName: true } },
+        business: { select: { name: true, ownerId: true } },
       }
     })
+
+    // ── Notify business owner of new review ──
+    if (review.business?.ownerId) {
+      const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating)
+      await prisma.notification.create({
+        data: {
+          userId: review.business.ownerId,
+          businessId,
+          type: 'NEW_REVIEW',
+          title: 'New Review Received',
+          body: `${dbUser.fullName} left a ${stars} review${comment ? `: "${comment.slice(0, 80)}${comment.length > 80 ? '...' : ''}"` : '.'}`,
+          isRead: false,
+        }
+      }).catch(err => console.error('[notification create]', err))
+    }
 
     return NextResponse.json({ review })
   } catch (err) {
