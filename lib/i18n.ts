@@ -24,7 +24,7 @@ const translations: Record<Language, any> = {
       footer: '© 2025 Meda. Built for the Habesha community in Canada.',
     },
     browse: {
-      title: '{t.browse.title}',
+      title: 'Browse Habesha Businesses',
       search_placeholder: 'Search businesses...',
       all: 'All',
       no_businesses: 'No businesses found',
@@ -281,15 +281,29 @@ export function useLanguage() {
   const [language, setLanguageState] = useState<Language>('en')
 
   useEffect(() => {
+    // Read initial value from localStorage
     const saved = localStorage.getItem('meda-language') as Language
     if (saved && ['en', 'am', 'ti', 'ar'].includes(saved)) {
       setLanguageState(saved)
     }
+
+    // Listen for language changes from other components
+    const handleChange = () => {
+      const updated = localStorage.getItem('meda-language') as Language
+      if (updated && ['en', 'am', 'ti', 'ar'].includes(updated)) {
+        setLanguageState(updated)
+      }
+    }
+
+    window.addEventListener('meda-language-change', handleChange)
+    return () => window.removeEventListener('meda-language-change', handleChange)
   }, [])
 
   const setLanguage = (lang: Language) => {
     localStorage.setItem('meda-language', lang)
     setLanguageState(lang)
+    // Broadcast to all other components using useLanguage
+    window.dispatchEvent(new Event('meda-language-change'))
   }
 
   const t = translations[language]
