@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { v2 as cloudinary } from 'cloudinary'
+import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
-
-export const config = {
-  api: { bodyParser: { sizeLimit: '10mb' } }
-}
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -14,13 +11,20 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
-function getEmailFromToken(req: Request): string | null {
+// ✅ Cryptographically verifies the JWT via Supabase — cannot be forged
+async function verifyAdmin(req: Request): Promise<boolean> {
   try {
     const token = req.headers.get('Authorization')?.replace('Bearer ', '')
-    if (!token) return null
-    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString())
-    return payload.email || null
-  } catch { return null }
+    if (!token) return false
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    const { data, error } = await supabase.auth.getUser(token)
+    if (error || !data?.user?.email) return false
+    const dbUser = await (prisma as any).user.findUnique({ where: { email: data.user.email } })
+    return dbUser?.role === 'SUPER_ADMIN'
+  } catch { return false }
 }
 
 function slugify(name: string): string {
@@ -32,7 +36,7 @@ async function uploadImage(base64: string, slug: string): Promise<string> {
     folder: `meda/categories`,
     public_id: slug,
     overwrite: true,
-    transformation: [{ width: 600, height: 400, crop: 'fill', quality: 'auto:low', format: 'webp' }],
+    transformation: [{ width: 400, height: 400, crop: 'fill', quality: 'auto', format: 'webp' }],
   })
   return result.secure_url
 }
@@ -41,38 +45,23 @@ async function uploadImage(base64: string, slug: string): Promise<string> {
 export async function GET() {
   try {
     const categories = await (prisma as any).category.findMany({
-      where: { isActive: true, parentId: null },
+      where: { isActive: true },
       orderBy: [{ order: 'asc' }, { name: 'asc' }],
-      include: {
-        _count: { select: { businesses: true } },
-        subcategories: {
-          where: { isActive: true },
-          orderBy: [{ order: 'asc' }, { name: 'asc' }],
-          include: { _count: { select: { businesses: true } } },
-        },
-      },
+      include: { _count: { select: { businesses: true } } },
     })
-    return NextResponse.json({ categories }, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
-        'CDN-Cache-Control': 'no-store',
-      }
-    })
+    return NextResponse.json({ categories })
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 })
   }
 }
 
-// POST — admin only
+// POST — admin only, create
 export async function POST(req: NextRequest) {
   try {
-    const email = getEmailFromToken(req)
-    if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const admin = await (prisma as any).user.findUnique({ where: { email } })
-    if (admin?.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!await verifyAdmin(req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const { name, icon, description, order, imageBase64, parentId } = await req.json()
+    const { name, icon, description, order, imageBase64 } = await req.json()
     if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
 
     const slug = slugify(name)
@@ -83,14 +72,7 @@ export async function POST(req: NextRequest) {
     }
 
     const category = await (prisma as any).category.create({
-      data: {
-        name, slug,
-        icon: icon || '🏢',
-        description: description || null,
-        order: order ?? 0,
-        imageUrl: imageUrl ?? null,
-        parentId: parentId || null,
-      },
+      data: { name, slug, icon: icon || '🏢', description: description || null, order: order ?? 0, imageUrl: imageUrl ?? null },
     })
     return NextResponse.json({ success: true, category })
   } catch (err: any) {
@@ -100,15 +82,12 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PATCH — admin only
+// PATCH — admin only, update
 export async function PATCH(req: NextRequest) {
   try {
-    const email = getEmailFromToken(req)
-    if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const admin = await (prisma as any).user.findUnique({ where: { email } })
-    if (admin?.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!await verifyAdmin(req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const { id, name, icon, description, order, isActive, imageBase64, parentId } = await req.json()
+    const { id, name, icon, description, order, isActive, imageBase64 } = await req.json()
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
     const data: any = {}
@@ -117,7 +96,6 @@ export async function PATCH(req: NextRequest) {
     if (description !== undefined) data.description = description
     if (order !== undefined) data.order = order
     if (isActive !== undefined) data.isActive = isActive
-    if (parentId !== undefined) data.parentId = parentId || null
 
     if (imageBase64?.startsWith('data:')) {
       const slug = data.slug || (await (prisma as any).category.findUnique({ where: { id } }))?.slug || id
@@ -135,19 +113,14 @@ export async function PATCH(req: NextRequest) {
 // DELETE — admin only
 export async function DELETE(req: NextRequest) {
   try {
-    const email = getEmailFromToken(req)
-    if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const admin = await (prisma as any).user.findUnique({ where: { email } })
-    if (admin?.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!await verifyAdmin(req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { id } = await req.json()
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
-    const bizCount = await (prisma as any).business.count({ where: { categoryId: id } })
-    const subBizCount = await (prisma as any).business.count({ where: { subcategoryId: id } })
-    if (bizCount + subBizCount > 0) return NextResponse.json({ error: `Cannot delete — ${bizCount + subBizCount} business(es) use this category` }, { status: 400 })
+    const count = await (prisma as any).business.count({ where: { categoryId: id } })
+    if (count > 0) return NextResponse.json({ error: `Cannot delete — ${count} business(es) use this category` }, { status: 400 })
 
-    await (prisma as any).category.deleteMany({ where: { parentId: id } })
     await (prisma as any).category.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (err) {

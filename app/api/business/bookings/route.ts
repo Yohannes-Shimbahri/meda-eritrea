@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createServerClient } from '@/lib/supabase'
 import { Resend } from 'resend'
+import { BookingStatus } from '@prisma/client'
+import { z } from 'zod'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.FROM_EMAIL || 'onboarding@resend.dev'
@@ -42,11 +44,35 @@ export async function PATCH(req: NextRequest) {
     const token = req.headers.get('authorization')?.replace('Bearer ', '')
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { bookingId, status } = await req.json()
+    const rawBody = await req.json()
+
+    // ── Validate input ────────────────────────────────────────
+    const VALID_STATUSES = ['CONFIRMED', 'CANCELLED', 'COMPLETED', 'PENDING', 'RESCHEDULED'] as const
+    const Schema = z.object({
+      bookingId: z.string().uuid('Invalid bookingId'),
+      status: z.string().min(1, 'Status is required'),
+    })
+    const parsed = Schema.safeParse(rawBody)
+    if (!parsed.success) {
+      const message = parsed.error.issues.map((i) => i.message).join(', ')
+      return NextResponse.json({ error: message }, { status: 400 })
+    }
+    const { bookingId, status } = parsed.data
+
+    // ── Verify booking belongs to this business owner ─────────
+    const supabase = createServerClient(token)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const dbUser = await prisma.user.findUnique({ where: { email: user.email! } })
+    const business = await prisma.business.findUnique({ where: { ownerId: dbUser?.id } })
+    const bookingCheck = await prisma.booking.findUnique({ where: { id: bookingId } })
+    if (!bookingCheck || bookingCheck.businessId !== business?.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const booking = await prisma.booking.update({
       where: { id: bookingId },
-      data: { status },
+      data: { status: status as BookingStatus },
       include: {
         client: { select: { fullName: true, email: true } },
         business: { select: { name: true, slug: true } },

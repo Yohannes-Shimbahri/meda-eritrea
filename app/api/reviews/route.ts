@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createServerClient } from '@/lib/supabase'
+import { z } from 'zod'
 
 async function getUserFromToken(token: string) {
   const supabase = createServerClient(token)
@@ -18,16 +19,27 @@ export async function POST(req: NextRequest) {
     const dbUser = await getUserFromToken(token)
     if (!dbUser) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-    const { businessId, rating, comment } = await req.json()
-    if (!businessId || !rating) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
-    if (rating < 1 || rating > 5) return NextResponse.json({ error: 'Rating must be 1-5' }, { status: 400 })
+    const rawBody = await req.json()
+
+    // ── Validate input ────────────────────────────────────────
+    const Schema = z.object({
+      businessId: z.string().uuid('Invalid businessId'),
+      rating: z.number().int().min(1, 'Rating must be at least 1').max(5, 'Rating must be at most 5'),
+      comment: z.string().max(1000, 'Review must be under 1000 characters').optional(),
+    })
+    const parsed = Schema.safeParse(rawBody)
+    if (!parsed.success) {
+      const message = parsed.error.issues.map((i) => i.message).join(', ')
+      return NextResponse.json({ error: message }, { status: 400 })
+    }
+    const { businessId, rating, comment } = parsed.data
 
     // Check if user already reviewed this business
     const existing = await prisma.review.findFirst({
       where: { businessId, clientId: dbUser.id }
     })
-
     if (existing) {
+      // Update existing review
       const updated = await prisma.review.update({
         where: { id: existing.id },
         data: { rating, comment },
@@ -44,25 +56,9 @@ export async function POST(req: NextRequest) {
         comment: comment || null,
       },
       include: {
-        client: { select: { fullName: true } },
-        business: { select: { name: true, ownerId: true } },
+        client: { select: { fullName: true } }
       }
     })
-
-    // ── Notify business owner of new review ──
-    if (review.business?.ownerId) {
-      const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating)
-      await prisma.notification.create({
-        data: {
-          userId: review.business.ownerId,
-          businessId,
-          type: 'NEW_REVIEW',
-          title: 'New Review Received',
-          body: `${dbUser.fullName} left a ${stars} review${comment ? `: "${comment.slice(0, 80)}${comment.length > 80 ? '...' : ''}"` : '.'}`,
-          isRead: false,
-        }
-      }).catch(err => console.error('[notification create]', err))
-    }
 
     return NextResponse.json({ review })
   } catch (err) {
