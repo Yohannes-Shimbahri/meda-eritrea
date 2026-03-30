@@ -3,7 +3,14 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, fullName } = await req.json()
+    const body = await req.json().catch(() => ({}))
+    const { email, fullName } = body
+
+    // ✅ Validate before hitting the database
+    if (!email || !fullName) {
+      return NextResponse.json({ error: 'email and fullName are required' }, { status: 400 })
+    }
+
     await prisma.user.upsert({
       where: { email },
       update: {},
