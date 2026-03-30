@@ -37,7 +37,7 @@ const PROTECTED_ROUTES = [
 
 const GUEST_ONLY_ROUTES = ['/login', '/register']
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? '127.0.0.1'
   const { pathname } = request.nextUrl
 

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist } from 'next/font/google'
+import { headers } from 'next/headers'
 import './globals.css'
 
 const geist = Geist({ subsets: ['latin'] })
@@ -41,9 +42,16 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Read the nonce that middleware set on the request headers
+  const nonce = (await headers()).get('x-nonce') ?? ''
+
   return (
     <html lang="en">
+      <head>
+        {/* This tells Next.js to use your nonce for its own injected scripts */}
+        <meta property="csp-nonce" content={nonce} />
+      </head>
       <body className={geist.className}>
         {children}
       </body>
