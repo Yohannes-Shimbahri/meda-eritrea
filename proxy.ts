@@ -27,7 +27,6 @@ function maybeCleanup() {
   }
 }
 
-// ── Protected routes (require login) ─────────────────────────
 const PROTECTED_ROUTES = [
   '/business/dashboard',
   '/client/dashboard',
@@ -36,7 +35,6 @@ const PROTECTED_ROUTES = [
   '/admin',
 ]
 
-// ── Guest only routes (redirect if logged in) ─────────────────
 const GUEST_ONLY_ROUTES = ['/login', '/register']
 
 export async function proxy(request: NextRequest) {
@@ -45,29 +43,44 @@ export async function proxy(request: NextRequest) {
 
   maybeCleanup()
 
-  // ── Rate Limiting ────────────────────────────────────────────
+  // ── Rate Limiting ─────────────────────────────────────────
   if (['/api/client/create', '/api/business/create'].some(p => pathname.startsWith(p))) {
     if (!rateLimit(`auth:${ip}`, 10, 60_000))
       return NextResponse.json({ error: 'Too many requests. Please wait and try again.' }, { status: 429 })
   }
-
   if (pathname.startsWith('/api/bookings') && request.method === 'POST') {
     if (!rateLimit(`booking:${ip}`, 20, 60_000))
-      return NextResponse.json({ error: 'Too many booking attempts. Please slow down.' }, { status: 429 })
+      return NextResponse.json({ error: 'Too many booking attempts.' }, { status: 429 })
   }
-
   if (pathname.startsWith('/api/admin') && request.method !== 'GET') {
     if (!rateLimit(`admin:${ip}`, 30, 60_000))
       return NextResponse.json({ error: 'Too many admin requests.' }, { status: 429 })
   }
-
   if (pathname.startsWith('/api/')) {
     if (!rateLimit(`api:${ip}`, 200, 60_000))
       return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
   }
 
-  // ── Supabase session ─────────────────────────────────────────
-  const response = NextResponse.next()
+  // ── Generate nonce for CSP ────────────────────────────────
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
+
+  const csp = [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' https://js.stripe.com https://maps.googleapis.com`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://*.supabase.co",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://maps.googleapis.com",
+    "frame-src https://js.stripe.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join('; ')
+
+  // ── Supabase session ──────────────────────────────────────
+  const response = NextResponse.next({
+    request: { headers: new Headers({ ...Object.fromEntries(request.headers), 'x-nonce': nonce }) },
+  })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -89,19 +102,18 @@ export async function proxy(request: NextRequest) {
   const isProtected = PROTECTED_ROUTES.some(r => pathname.startsWith(r))
   const isGuestOnly = GUEST_ONLY_ROUTES.some(r => pathname.startsWith(r))
 
-  // Not logged in → redirect to login
   if (isProtected && !user) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('next', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
-  // Already logged in → redirect away from login/register
   if (isGuestOnly && user) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // ── Security Headers ─────────────────────────────────────────
+  // ── Security Headers ──────────────────────────────────────
+  response.headers.set('Content-Security-Policy', csp)
   response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
