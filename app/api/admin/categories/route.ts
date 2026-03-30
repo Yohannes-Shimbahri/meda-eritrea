@@ -47,7 +47,19 @@ export async function GET() {
     const categories = await (prisma as any).category.findMany({
       where: { isActive: true },
       orderBy: [{ order: 'asc' }, { name: 'asc' }],
-      include: { _count: { select: { businesses: true } } },
+      include: { 
+        _count: { select: { businesses: true } },
+        subcategories: {             
+            where: { isActive: true },  
+            orderBy: { name: 'asc' },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              icon: true,
+            },
+        },
+      },
     })
     return NextResponse.json({ categories })
   } catch (err) {

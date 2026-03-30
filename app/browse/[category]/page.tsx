@@ -31,7 +31,9 @@ function CategoryBrowseContent() {
   useEffect(() => {
     if (!categorySlug) return
     fetch(`/api/admin/categories?t=${Date.now()}`, { cache: 'no-store' })
-      .then(r => r.json()).then(data => { const found = data.categories?.find((c: Category) => c.slug === categorySlug); setCategory(found || null); setLoading(false) })
+      .then(r => r.json()).then(data => { const found = data.categories?.find((c: Category) => c.slug === categorySlug);if (found) { found.subcategories = found.subcategories ?? []
+        } 
+        setCategory(found || null); setLoading(false) })
       .catch(() => setLoading(false))
   }, [categorySlug])
 
@@ -61,7 +63,7 @@ function CategoryBrowseContent() {
   if (loading) return <div style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ color: '#555' }}>Loading...</div></div>
   if (!category) return <div style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#f5f0e8', gap: '1rem' }}><div style={{ fontSize: '3rem' }}>🔍</div><h1>Category not found</h1><Link href="/browse" style={{ color: '#c9933a', textDecoration: 'none' }}>Back to Browse</Link></div>
 
-  const tabs = [{ slug: 'all', name: t.browse.all }, ...category.subcategories.map(s => ({ slug: s.slug, name: s.name }))]
+  const tabs = [{ slug: 'all', name: t.browse.all }, ...(category.subcategories ?? []).map(s => ({ slug: s.slug, name: s.name }))]
 
   return (
     <main style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', color: '#f5f0e8', fontFamily: 'system-ui, sans-serif' }} dir={isRTL ? 'rtl' : 'ltr'}>
