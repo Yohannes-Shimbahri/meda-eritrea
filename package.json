@@ -6,7 +6,9 @@
     "dev": "cross-env TURBOPACK=0 next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:prod": "cross-env TEST_URL=https://meda-eritrea.vercel.app tsx scripts/test-api.ts",
+    "test:local": "cross-env TEST_URL=http://localhost:3000 tsx scripts/test-api.ts"
   },
   "dependencies": {
     "@fullcalendar/daygrid": "^6.1.20",
@@ -27,6 +29,7 @@
     "next": "16.1.6",
     "next-cloudinary": "^6.17.5",
     "next-intl": "^4.8.3",
+    "next-pwa": "^5.6.0",
     "pg": "^8.18.0",
     "prisma": "^5.22.0",
     "radix-ui": "^1.4.3",
@@ -39,6 +42,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/next-pwa": "^5.6.9",
     "@types/node": "^20",
     "@types/pg": "^8.16.0",
     "@types/react": "^19",

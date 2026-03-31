@@ -10,6 +10,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: '#c9933a',
 }
 
 export const metadata: Metadata = {
@@ -22,6 +23,12 @@ export const metadata: Metadata = {
   authors: [{ name: 'Meda' }],
   creator: 'Meda',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Meda',
+  },
   openGraph: {
     type: 'website',
     siteName: 'Meda',
@@ -40,17 +47,28 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true },
   },
+  icons: {
+    icon: [
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+  },
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // Read the nonce that middleware set on the request headers
   const nonce = (await headers()).get('x-nonce') ?? ''
 
   return (
     <html lang="en">
       <head>
-        {/* This tells Next.js to use your nonce for its own injected scripts */}
         <meta property="csp-nonce" content={nonce} />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Meda" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={geist.className}>
         {children}
