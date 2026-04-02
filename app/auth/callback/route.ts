@@ -33,8 +33,22 @@ export async function GET(request: NextRequest) {
     await supabase.auth.exchangeCodeForSession(code)
     const { data: { user } } = await supabase.auth.getUser()
 
-    // ── Upsert DB user record for Google login ──
     if (user?.email) {
+      // Check if this is a new user (no terms accepted yet)
+      const termsAccepted = user.user_metadata?.terms_accepted
+
+      if (!termsAccepted) {
+        // New Google user — redirect to terms acceptance page
+        // We pass their intended destination so we can redirect after acceptance
+        const destination = user.user_metadata?.role === 'BUSINESS_OWNER'
+          ? '/business/dashboard'
+          : '/client/dashboard'
+        return NextResponse.redirect(
+          new URL(`/accept-terms?next=${destination}`, requestUrl.origin)
+        )
+      }
+
+      // Existing user who already accepted — upsert DB record and redirect
       await prisma.user.upsert({
         where: { email: user.email },
         update: {},
@@ -44,12 +58,14 @@ export async function GET(request: NextRequest) {
           role: user.user_metadata?.role === 'BUSINESS_OWNER' ? 'BUSINESS_OWNER' : 'CLIENT',
         },
       })
-    }
 
-    if (user?.user_metadata?.role === 'BUSINESS_OWNER') {
-      return NextResponse.redirect(new URL('/business/dashboard', requestUrl.origin))
+      if (user.user_metadata?.role === 'BUSINESS_OWNER') {
+        return NextResponse.redirect(new URL('/business/dashboard', requestUrl.origin))
+      }
+
+      return NextResponse.redirect(new URL('/client/dashboard', requestUrl.origin))
     }
   }
 
-  return NextResponse.redirect(new URL('/dashboard', requestUrl.origin))
+  return NextResponse.redirect(new URL('/client/dashboard', requestUrl.origin))
 }
