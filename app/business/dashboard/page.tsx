@@ -691,6 +691,49 @@ export default function BusinessDashboard() {
             <div style={{ animation: 'fadeInUp 0.4s ease both' }}>
               <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.4rem' }}>Welcome, {ownerName.split(' ')[0]} 👋</h1>
               <p style={{ color: '#888', marginBottom: '2rem', fontSize: '0.9rem' }}>Here&apos;s how <span style={{ color: '#c9933a' }}>{businessName}</span> is doing</p>
+              {currentPlan !== 'PRO' && (
+                <div style={{
+                  background: 'linear-gradient(135deg, #1a1200 0%, #0a0a0a 100%)',
+                  border: '1px solid #c9933a44',
+                  borderRadius: '1rem',
+                  padding: '1.25rem 1.5rem',
+                  marginBottom: '1.5rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '1rem',
+                }}>
+                  <div>
+                    <div style={{ fontWeight: '700', color: '#c9933a', marginBottom: '0.25rem', fontSize: '0.95rem' }}>
+                      {currentPlan === 'FREE' ? '⭐ You\'re on the Free plan' : '🚀 You\'re on Standard'}
+                    </div>
+                    <div style={{ color: '#888', fontSize: '0.85rem' }}>
+                      {currentPlan === 'FREE'
+                        ? 'Upgrade to Standard to unlock booking analytics, more photos & employees — from $19/mo'
+                        : 'Upgrade to Pro for unlimited everything, advanced analytics, profile views & verified badge — $39/mo'}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('settings')}
+                    style={{
+                      backgroundColor: '#c9933a',
+                      color: '#0a0a0a',
+                      border: 'none',
+                      padding: '0.6rem 1.25rem',
+                      borderRadius: '0.75rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {currentPlan === 'FREE' ? 'See Plans →' : 'Upgrade to Pro →'}
+                  </button>
+                </div>
+              )}
+              
               <div className="stats-grid-4" style={{ display: 'grid', gap: '1rem', marginBottom: '2rem' }}>
                 {[
                   { label: "Today's Bookings", value: String(bookingStats.today), icon: '📅', color: '#c9933a', tab: 'bookings' as Tab },
