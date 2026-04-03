@@ -54,7 +54,7 @@ export default function HomePage() {
       .then(r => r.json())
       .then(data => {
         if (data.categories) {
-          setCategories(data.categories.map((c: any) => ({
+          setCategories(data.categories.filter((c: any) => !c.parentId).map((c: any) => ({
             name: c.name,
             slug: c.slug,
             image: c.imageUrl || `/categories/${c.slug}.jpg`,
