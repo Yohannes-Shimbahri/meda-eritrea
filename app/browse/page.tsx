@@ -82,6 +82,7 @@ function GoogleMap({ businesses, selectedId, onSelect, city }: { businesses: Bus
     const center = CITY_COORDS[centerCity] || CITY_COORDS.Toronto
     mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
       center, zoom: city !== 'All Cities' ? 12 : 4,
+      gestureHandling: 'greedy', 
       mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
       styles: [
         { elementType: 'geometry', stylers: [{ color: '#1a1a1a' }] },
@@ -260,7 +261,7 @@ function BrowseContent() {
     }
     const t = setTimeout(fetchBusinesses, 300)
     return () => clearTimeout(t)
-  }, [search, category, city])
+  }, [search, category, subcategory, city])
 
   const filtered = businesses
     .filter(b => {
@@ -373,7 +374,14 @@ function BrowseContent() {
         {subcategories.length > 1 && (
           <div style={{ display: 'flex', gap: '0.4rem', overflowX: 'auto', paddingBottom: '0.25rem', paddingTop: '0.4rem', borderTop: '1px solid #1a1a1a' }}>
             {subcategories.map(s => (
-              <button key={s.value} onClick={() => setSubcategory(s.value)}
+              <button key={s.value} 
+                onClick={() => {
+                  setSubcategory(s.value)
+                  const params = new URLSearchParams(searchParams.toString())
+                  if (s.value) params.set('subcategory', s.value)
+                  else params.delete('subcategory')
+                  router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+                }}
                 style={{ padding: '0.25rem 0.65rem', borderRadius: '2rem', border: `1px solid ${subcategory === s.value ? '#c9933a' : '#222'}`, backgroundColor: subcategory === s.value ? '#c9933a22' : 'transparent', color: subcategory === s.value ? '#c9933a' : '#666', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600', whiteSpace: 'nowrap', flexShrink: 0 }}>
                 {s.label}
               </button>

@@ -200,7 +200,7 @@ export default function HomePage() {
         }
 
         @media (max-width: 480px) {
-          .cat-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .cat-grid { grid-template-columns: repeat(3, 1fr) !important; }
           .search-row { flex-direction: column !important; }
           .search-row select { width: 100% !important; }
         }
