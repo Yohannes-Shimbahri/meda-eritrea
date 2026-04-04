@@ -16,9 +16,11 @@ async function verifyAdmin(req: Request): Promise<boolean> {
   try {
     const token = req.headers.get('Authorization')?.replace('Bearer ', '')
     if (!token) return false
+    const { createClient } = await import('@supabase/supabase-js')
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
     const { data, error } = await supabase.auth.getUser(token)
     if (error || !data?.user?.email) return false
