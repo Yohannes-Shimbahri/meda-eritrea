@@ -182,6 +182,8 @@ function BrowseContent() {
   const pathname = usePathname()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
+  const [subcategory, setSubcategory] = useState('')
+  const [subcategories, setSubcategories] = useState<{ label: string; value: string }[]>([])
 
   const changeCategory = (val: string) => {
     setCategory(val)
@@ -209,7 +211,9 @@ function BrowseContent() {
         if (data.categories?.length) {
           setCategories([
             { label: 'All', value: '' },
-            ...data.categories.map((c: any) => ({ label: c.name, value: c.slug }))
+            ...data.categories
+              .filter((c: any) => !c.parentId)
+              .map((c: any) => ({ label: c.name, value: c.slug, id: c.id, subcategories: c.subcategories || [] }))
           ])
         }
       })
@@ -222,6 +226,20 @@ function BrowseContent() {
   }, [searchParams])
 
   useEffect(() => {
+    const selected = categories.find(c => c.value === category)
+    if ((selected as any)?.subcategories?.length > 0) {
+      setSubcategories([
+        { label: 'All', value: '' },
+        ...(selected as any).subcategories.map((s: any) => ({ label: s.name, value: s.slug }))
+      ])
+    } else {
+      setSubcategories([])
+    }
+    setSubcategory('') // reset subcategory when category changes
+  }, [category, categories])
+  
+  
+  useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => { if (session?.user) setUser(session.user) })
   }, [])
 
@@ -232,6 +250,7 @@ function BrowseContent() {
         const params = new URLSearchParams()
         if (search) params.set('search', search)
         if (category) params.set('category', category)
+        if (subcategory) params.set('subcategory', subcategory)
         if (city !== 'All Cities') params.set('city', city)
         const res = await fetch(`/api/businesses?${params}`)
         const data = await res.json()
@@ -350,6 +369,17 @@ function BrowseContent() {
             </button>
           ))}
         </div>
+        {/* Subcategory pills */}
+        {subcategories.length > 1 && (
+          <div style={{ display: 'flex', gap: '0.4rem', overflowX: 'auto', paddingBottom: '0.25rem', paddingTop: '0.4rem', borderTop: '1px solid #1a1a1a' }}>
+            {subcategories.map(s => (
+              <button key={s.value} onClick={() => setSubcategory(s.value)}
+                style={{ padding: '0.25rem 0.65rem', borderRadius: '2rem', border: `1px solid ${subcategory === s.value ? '#c9933a' : '#222'}`, backgroundColor: subcategory === s.value ? '#c9933a22' : 'transparent', color: subcategory === s.value ? '#c9933a' : '#666', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* RESULTS COUNT */}
