@@ -111,7 +111,12 @@ export default function HomePage() {
               <Link href="/register/client" onClick={() => setMenuOpen(false)} style={{ backgroundColor: '#c9933a', color: '#0a0a0a', padding: '0.875rem 1.25rem', borderRadius: '0.75rem', fontWeight: '700', textDecoration: 'none', textAlign: 'center' }}>Sign Up</Link>
             </>
           )}
-          <Link href="/register/business" onClick={() => setMenuOpen(false)} style={{ border: '1px solid #c9933a', color: '#c9933a', padding: '0.875rem 1.25rem', borderRadius: '0.75rem', fontWeight: '700', textDecoration: 'none', textAlign: 'center' }}>List Your Business</Link>
+          <button
+            onClick={() => { setMenuOpen(false); window.location.href = '/register/business' }}
+            style={{ border: '1px solid #c9933a', color: '#c9933a', padding: '0.875rem 1.25rem', borderRadius: '0.75rem', fontWeight: '700', textDecoration: 'none', textAlign: 'center', background: 'none', cursor: 'pointer', width: '100%' }}
+          >
+            List Your Business
+          </button>
         </div>
       )}
 
