@@ -76,7 +76,7 @@ export default function HomePage() {
           <Link href="/browse" style={{ color: '#888', fontSize: '0.9rem', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#c9933a')} onMouseLeave={e => (e.currentTarget.style.color = '#888')}>Browse</Link>
           {user ? (
             <>
-              <Link href="/client/dashboard" style={{ color: '#888', fontSize: '0.9rem', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#c9933a')} onMouseLeave={e => (e.currentTarget.style.color = '#888')}>My Dashboard</Link>
+              <Link href={user?.user_metadata?.role === 'BUSINESS_OWNER' ? '/business/dashboard' : '/client/dashboard'} style={{ color: '#888', fontSize: '0.9rem', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#c9933a')} onMouseLeave={e => (e.currentTarget.style.color = '#888')}>My Dashboard</Link>
               <button onClick={async () => { await supabase.auth.signOut(); setUser(null) }} style={{ backgroundColor: 'transparent', border: '1px solid #333', color: '#888', padding: '0.6rem 1.25rem', borderRadius: '0.75rem', fontWeight: '700', fontSize: '0.9rem', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#c9933a')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#333')}>Sign Out</button>
             </>
           ) : (
@@ -102,7 +102,7 @@ export default function HomePage() {
           <Link href="/browse" onClick={() => setMenuOpen(false)} style={{ color: '#f5f0e8', textDecoration: 'none', fontSize: '1rem', fontWeight: '600', padding: '0.5rem 0', borderBottom: '1px solid #222' }}>Browse</Link>
           {user ? (
             <>
-              <Link href="/client/dashboard" onClick={() => setMenuOpen(false)} style={{ color: '#f5f0e8', textDecoration: 'none', fontSize: '1rem', fontWeight: '600', padding: '0.5rem 0', borderBottom: '1px solid #222' }}>My Dashboard</Link>
+              <Link href={user?.user_metadata?.role === 'BUSINESS_OWNER' ? '/business/dashboard' : '/client/dashboard'} onClick={() => setMenuOpen(false)} style={{ color: '#f5f0e8', textDecoration: 'none', fontSize: '1rem', fontWeight: '600', padding: '0.5rem 0', borderBottom: '1px solid #222' }}>My Dashboard</Link>
               <button onClick={async () => { await supabase.auth.signOut(); setUser(null); setMenuOpen(false) }} style={{ backgroundColor: 'transparent', border: '1px solid #333', color: '#888', padding: '0.875rem 1.25rem', borderRadius: '0.75rem', fontWeight: '700', cursor: 'pointer', textAlign: 'center' }}>Sign Out</button>
             </>
           ) : (
